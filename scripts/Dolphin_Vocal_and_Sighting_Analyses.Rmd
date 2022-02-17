@@ -1,0 +1,393 @@
+---
+title: "Nlme Vocals and Sightings"
+output: html_document
+---
+Testing the model first -- 
+```{r}
+dolphinz1 <- read.csv("~/Desktop/Sighting Data/dolphinzz.csv")
+dolphinz <- na.omit(dolphinz1)
+stna <-  subset(dolphinz, site=="Terminal")
+stnc <- subset(dolphinz, site=="Aquarium")
+stnb <-  subset(dolphinz, site=="Confluence")
+stnd <-  subset(dolphinz, site=="Mouth")
+stne <- subset(dolphinz, site=="Ashley1")
+stnf <-  subset(dolphinz, site=="Ashley2")
+```
+```{r}
+par(mfrow=c(2,3))
+hist(stna$total, breaks = seq(0,40, by =2),  xlab = "Total Number of Vocalizations", main = "Terminal") 
+hist(stnb$total, breaks = seq(0,40, by =2),  xlab = "Total Number of Vocalizations", main = "Confluence") 
+hist(stnc$total, breaks = seq(0,200, by =2),  xlab = "Total Number of Vocalizations", main = "Aquarium") 
+hist(stnd$total, breaks = seq(0,40, by =2),  xlab = "Total Number of Vocalizations", main = "Harbor Mouth") 
+hist(stne$total, breaks = seq(0,20, by =2),  xlab = "Total Number of Vocalizations", main = "Lower Ashley") 
+hist(stnf$total, breaks = seq(0,50, by =2),  xlab = "Total Number of Vocalizations", main = "Upper Ashley") 
+```
+```{r}
+par(mfrow=c(1,2))
+hist(dolphinz$total, breaks = seq(0,200, by =4),  xlab = "Total Number of Vocalizations", main = "Vocalization Frequency")  
+hist(dolphinz$dolphins_best, breaks = seq(0,30, by =2),  xlab = "Total Number of Vocalizations", main = "Sighting Frequency") 
+```
+```{r}
+par(mfrow=c(2,3))
+hist(stna$dolphins_best, breaks = seq(0,30, by =2),  xlab = "Total Number of Dolphins", main = "Terminal") 
+hist(stnb$dolphins_best, breaks = seq(0,30, by =2),  xlab = "Total Number of Dolphins", main = "Confluence") 
+hist(stnc$dolphins_best, breaks = seq(0,30, by =2),  xlab = "Total Number of Dolphins", main = "Aquarium") 
+hist(stnd$dolphins_best, breaks = seq(0,30, by =2),  xlab = "Total Number of Dolphins", main = "Harbor Mouth") 
+hist(stne$dolphins_best, breaks = seq(0,30, by =2),  xlab = "Total Number of Dolphins", main = "Lower Ashley") 
+hist(stnf$dolphins_best, breaks = seq(0,30, by =2),  xlab = "Total Number of Dolphins", main = "Upper Ashley") 
+```
+Basic regression
+```{r}
+basic.lm <- lm(total ~ dolphins_best, data = dolphinz)
+summary(basic.lm)
+```
+```{r}
+library(ggplot2)  # load the package
+
+(prelim_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total)) +
+  geom_point() +
+  geom_smooth(method = "lm"))
+plot(basic.lm, which = 1)  
+
+```
+```{r}
+boxplot(total ~ site, data = dolphinz, ylab = "Total Number of Vocalizations")
+boxplot(total ~ season, data = dolphinz, ylab = "Total Number of Vocalizations")
+```
+```{r}
+boxplot(log1p(total) ~ site, data = dolphinz, ylab = "Total Number of Vocalizations")
+boxplot(log1p(total) ~ season, data = dolphinz, ylab = "Total Number of Vocalizations")
+```
+
+```{r}
+(colour_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = site)) +
+  geom_point(size = 2) +
+  theme_classic() +
+  theme(legend.position = "none"))
+```
+```{r}
+(split_plot <- ggplot(aes(dolphins_best, total), data = dolphinz) + 
+  geom_point() + 
+  facet_wrap(~ site) + # create a facet for each mountain range
+  xlab("Dolphin Count across Sightings") + 
+  ylab("Total Vocalizations Present"))
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = season)) +
+      facet_wrap(~site, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(dolphins_best), y = log1p(total), colour = season)) +
+      facet_wrap(~site, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = site)) +
+      facet_wrap(~season, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = log1p(total), colour = site)) +
+      facet_wrap(~season, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+```{r}
+#numcols <- grep("^c\\.",names(dolphinz))
+#dolphinz2 <- dolphinz
+#dolphinz2[,numcols] <- scale(dolphinz2[,numcols])
+#m1_sc <- update(,data=dolphinz)
+```
+Poisson and Negative Binomial
+
+```{r}
+glm1_p <- glm(total ~ dolphins_best + site + season + calves_best + distance, data = dolphinz, family = poisson)
+summary(glm1_p)
+plot(glm1_p)
+
+```
+```{r}
+library(MASS)
+glm1_nb <- glm.nb(total ~ dolphins_best + site + season + calves_best + distance, data = dolphinz)
+summary(glm1_nb)
+```
+```{r}
+plot(glm1_nb)
+```
+Zero-Inflated Poisson
+```{r}
+library(pscl)
+zo <- zeroinfl(total ~ dolphins_best + site + season + calves_best + distance, data = dolphinz)
+summary(zo)
+plot(zo)
+```
+```{r}
+mnull <- update(zo, . ~ 1)
+
+pchisq(2 * (logLik(zo) - logLik(mnull)), df = 3, lower.tail = FALSE)
+
+```
+Comparing the poisson glm and zero-inflated poisson regression
+
+```{r}
+vuong(glm1_p, zo)
+
+```
+
+Linear Mixed Effects Model 
+```{r}
+site1 <- as.factor(dolphinz$site)
+szn <- as.factor(dolphinz$season)
+library(lme4)
+mixed_lmer <- lmer(total ~ dolphins_best + distance + calves_best + season + (1|site), data = dolphinz)
+summary(mixed_lmer)
+```
+```{r}
+plot(mixed_lmer)
+```
+```{r}
+qqnorm(resid(mixed_lmer))
+qqline(resid(mixed_lmer))
+```
+```{r}
+dolphinz$site <- as.factor(dolphinz$site)
+dolphinz$season <- as.factor(dolphinz$season)
+mixed_lmer2 <- lmer(total ~ dolphins_best + season + calves_best + (1|distance) + (1|site), data = dolphinz)  # the syntax stays the same, but now the nesting is taken into account
+summary(mixed_lmer2)
+```
+```{r}
+library(ggplot2)
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = season)) +
+      facet_wrap(~site, nrow=2) +   
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      geom_line(data = cbind(dolphinz, pred = predict(mixed_lmer)), aes(y = pred), size = 1) +  # adding predicted line from mixed model 
+      theme(legend.position = "none",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+```{r}
+library(ggplot2)
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = site)) +
+      facet_wrap(~season, nrow=2) +   
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      geom_line(data = cbind(dolphinz, pred = predict(mixed_lmer)), aes(y = pred), size = 1) +  # adding predicted line from mixed model 
+      theme(legend.position = "none",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+Random slope model
+```{r}
+mixed.ranslope <- lmer(total ~ dolphins_best + (1 + dolphins_best|site/season), data = dolphinz) 
+
+summary(mixed.ranslope)
+```
+```{r}
+### plot
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = szn)) +
+      facet_wrap(~site1, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      geom_line(data = cbind(dolphinz, pred = predict(mixed.ranslope)), aes(y = pred), size = 1) +  # adding predicted line from mixed model 
+      theme(legend.position = "none",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+```
+
+Negative Binomial Mixed Effects Model
+```{r}
+library(lme4)
+szn <- as.factor(dolphinz$season)
+site1 <- as.factor(dolphinz$site)
+mont <- as.factor(dolphinz$month)
+mixed.glmer_all <- glmer.nb(total ~ dolphins_best + season + calves_best + (1|distance) + (1|site1), data = dolphinz)
+
+numcols <- grep("^c\\.",names(dolphinz))
+dolphinz2 <- dolphinz
+dolphinz2[,numcols] <- scale(dolphinz2[,numcols])
+mixedall_sc <- update(mixed.glmer_all,data=dolphinz2)
+
+summary(mixed.glmer_all)
+```
+```{r}
+tt <- getME(mixed.glmer_all,"theta")
+ll <- getME(mixed.glmer_all,"lower")
+min(tt[ll==0])
+```
+```{r}
+plot(mixed.glmer_all)
+```
+```{r}
+qqnorm(resid(mixed.glmer_all))
+qqline(resid(mixed.glmer_all))
+```
+```{r}
+
+
+```
+
+Broken down by Stations
+```{r}
+mixed.glmer_a <- glmer.nb(total ~ dolphins_best + season + calves_best + (1|distance), data = stna)
+summary(mixed.glmer_a)
+```
+```{r}
+mixed.glmer_b <- glmer.nb(total ~ dolphins_best + season + calves_best + (1|distance), data = stnb)
+summary(mixed.glmer_b)
+```
+```{r}
+mixed.glmer_c <- glmer.nb(total ~ dolphins_best + season + calves_best + (1|distance), data = stnc)
+summary(mixed.glmer_c)
+```
+```{r}
+mixed.glmer_d <- glmer.nb(total ~ dolphins_best + season + calves_best + (1|distance), data = stnd)
+summary(mixed.glmer_d)
+```
+```{r}
+mixed.glmer_e <- glmer.nb(total ~ dolphins_best + season + calves_best + (1|distance), data = stne)
+summary(mixed.glmer_e)
+```
+
+```{r}
+mixed.glmer_f <- glmer.nb(total ~ dolphins_best + season + calves_best + (1|distance), data = stnf)
+summary(mixed.glmer_f)
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = season)) +
+      facet_wrap(~site, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(dolphins_best), y = log1p(total), colour = season)) +
+      facet_wrap(~site, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = site)) +
+      facet_wrap(~season, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+```{r}
+(mm_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = log1p(total), colour = site)) +
+      facet_wrap(~season, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      theme(legend.position = "right",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+)
+
+```
+Logisitic regression for likelihood test if you see a dolphin do you hear one?
+x is # of dolphins sighted and y is presence or absence of vocalizations
+
+```{r}
+library(dplyr)
+dolphins <- dolphinz %>%
+  mutate(newvocal = case_when(
+    total >= 1 ~ 1,
+    total <= 0 ~ 0,
+    ))
+dolphins2 <- dolphins %>%
+  mutate(newdolphin = case_when(
+    dolphins_best >= 1 ~ 1,
+    dolphins_best <= 0 ~ 0,
+    ))
+```
+
+```{r}
+stna_p <- dolphins[ dolphins$site =='Terminal' & dolphins$distance <= 350,] #don't nee which
+stnb_p <- dolphins[ dolphins$site =='Confluence' & dolphins$distance <= 350,]
+stnc_p <- dolphins[ dolphins$site =='Aquarium' & dolphins$distance <= 350,]
+stnd_p <- dolphins[ dolphins$site =='Mouth' & dolphins$distance <= 350,]
+stne_p <- dolphins[ dolphins$site =='Ashley1' & dolphins$distance <= 350,]
+stnf_p <- dolphins[ dolphins$site =='Ashley2' & dolphins$distance <= 350,]
+```
+
+```{r}
+library(MASS)
+logfit.lm <- lm(newvocal~dolphins_best+site+season+distance+calves_best, data = dolphins)
+summary(logfit.lm)
+
+library(ggplot2)
+
+(prob_plot <- ggplot(dolphins, aes(x = dolphins_best, y = newvocal)) +
+  geom_point() +
+  geom_smooth(method = "lm"))
+plot(logfit.lm, which = 1) 
+```
+```{r}
+
+
+```
+
+```{r}
+totalfit.lm <- glm(newvocal~newdolphin+site+season+distance+calves_best, family = binomial, data = dolphins2)
+summary(totalfit.lm)
+
+(prob_plot <- ggplot(dolphins2, aes(x = newdolphin, y = newvocal)) +
+  geom_point() +
+  geom_smooth(method = "glm"))
+plot(totalfit.lm, which = 1)  
+
+```
+
+
+
+```{r}
+plot(basic.lm, which = 2)  # a bit off at the extremes, but that's often the case; again doesn't look too bad
+boxplot(total ~ site, data = dolphinz)  # certainly looks like something is going on here
+```
+```{r}
+(colour_plot <- ggplot(dolphinz, aes(x = dolphins_best, y = total, colour = site)) +
+  geom_point(size = 2) +
+  theme_classic() +
+  theme(legend.position = "none"))
+```
+```{r}
+(split_plot <- ggplot(aes(dolphins_best, total), data = dolphinz) + 
+  geom_point() + 
+  facet_wrap(~ site) + # create a facet for each site
+  xlab("dolphin sightings") + 
+  ylab("dolphin vocals"))
+```
+```{r}
+site.lm <- lm(total ~ dolphins_best + site, data = dolphinz)
+summary(site.lm)
+```
+
