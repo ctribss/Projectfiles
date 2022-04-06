@@ -212,35 +212,6 @@ library(ggplot2)
 
 ```
 
-```{r}
-#ggplot(dolphinz,aes(x=Tide,y=evenness,fill=riverwidth))+geom_boxplot()+facet_wrap(~riverwidth)+ ggtitle("         Species Evenness at Varied River Width and Tidal Cycle")+labs(y= "Species Evenness")
-```
-
-
-```{r}
-#par(mfrow=c(1,2))
-#boxplot(log1p(total) ~ site, data = dolphinz, ylab = "Total Number of Vocalizations")
-#boxplot(log1p(total) ~ season, data = dolphinz, ylab = "Total Number of Vocalizations")
-```
-
-```{r}
-#(split_plot <- ggplot(aes(log1p(total), log1p(dolphin)), data = dolphinz) + 
-  #geom_point() + 
-  #facet_wrap(~ site) + # create a facet for each mountain range
-  #xlab("Dolphin Count across Sightings") + 
-  #ylab("Total Vocalizations Present"))
-```
-Grouping by site, color coding by Season
-```{r}
-#(mm_plot <- ggplot(dolphinz, aes(x = total, y = dolphin, colour = season)) +
-      #facet_wrap(~site, nrow=2) +   # a panel for each mountain range
-      #geom_point(alpha = 0.5) +
-      #theme_classic() +
-      #theme(legend.position = "right",
-            #panel.spacing = unit(2, "lines"))  # adding space between panels
-#)
-
-```
 log+1 Transformation with Site color code
 ```{r}
 #with glm
@@ -404,10 +375,6 @@ par(mfrow=c(2,2))
 ```
 
 ```{r}
-#ggplot(dolphinz,aes(x=Tide,y=evenness,fill=riverwidth))+geom_boxplot()+facet_wrap(~riverwidth)+ ggtitle("         Species Evenness at Varied River Width and Tidal Cycle")+labs(y= "Species Evenness")
-```
-
-```{r}
 #Echo bout boxplots across recorder sites/survey areas
 
 #dolphin ~ site
@@ -425,50 +392,34 @@ esite_boxplot = ggplot(data=dolphinz, aes(x=site, y=log1p(echo), fill = season))
 esite_boxplot
 ```
 
-
-
 ```{r}
-par(mfrow=c(1,2))
-boxplot(echo ~ site, data = dolphinz, ylab = "Total Number of Echo Bouts")
-boxplot(dolphin ~ site, data = dolphinz, ylab = "Total Number of Dolphins")
+my_BuPu <- brewer.pal(n = 9, "BuPu")[3:9]
 
-par(mfrow=c(1,2))
-boxplot(echo ~ season, data = dolphinz, ylab = "Total Number of Echo Bouts")
-boxplot(dolphin ~ season, data = dolphinz, ylab = "Total Number of Dolphins")
+ectotal <- ggplot(dolphinz, aes((log1p(echo)),(log1p(dolphin)))) +
+  geom_point(aes(group = site, color = site),  size = 3.5)+
+  xlab("Total Echo Bouts Detected") + ylab("Total Dolphins Sighted") +
+  scale_color_manual(name = "Survey Area", values  = my_BuPu)+
+  scale_y_continuous(breaks = pretty_breaks()) + 
+  theme_classic() +
+  scale_x_continuous(breaks = pretty_breaks())
+ectotal
+
+ectotalszn <- ggplot(dolphinz, aes((log1p(echo)),(log1p(dolphin)))) +
+  geom_point(aes(group = season, color = season),  size = 3.5)+
+  xlab("Total Echo Bouts Detected") + ylab("Total Dolphins Sighted") +
+  scale_color_manual(name = "Season", values  = my_BuPu)+
+  scale_y_continuous(breaks = pretty_breaks()) + 
+  theme_classic() +
+  scale_x_continuous(breaks = pretty_breaks())
+ectotalszn
 ```
-```{r}
-#par(mfrow=c(1,2))
-#boxplot(log1p(total) ~ site, data = dolphinz, ylab = "Total Number of Vocalizations")
-#boxplot(log1p(total) ~ season, data = dolphinz, ylab = "Total Number of Vocalizations")
-```
-
-```{r}
-(split_plot <- ggplot(aes(log1p(echo), dolphin), data = dolphinz) + 
-  geom_point() + 
-  facet_wrap(~ site) + # create a facet for each mountain range
-  xlab("Dolphin Count across Sightings") + 
-  ylab("Total Vocalizations Present"))
-```
-
-Grouping by site, color coding by Season
-```{r}
-(mm_plot <- ggplot(dolphinz, aes(x = echo, y = dolphin, colour = season)) +
-      facet_wrap(~site, nrow=2) +   # a panel for each mountain range
-      geom_point(alpha = 0.5) +
-      theme_classic() +
-      theme(legend.position = "right",
-            panel.spacing = unit(2, "lines"))  # adding space between panels
-)
-
-```
-
 
 log+1 Transformation with Season color code
 ```{r}
 #with site
-(mm_plot <- ggplot(dolphinz, aes(x = log1p(echo), y = log1p(dolphin), colour = site)) +
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(echo), y = log1p(dolphin))) +
       facet_wrap(~site, nrow=2) +   # a panel for each mountain range
-      geom_point(alpha = 0.5) +
+      geom_point(alpha = 0.5, colour = "dark blue") +
       theme_classic() + labs(x  =  "Total Echo Bouts Detected", y = "Total Dolphins Sighted") +
       theme(legend.position = "none",
             panel.spacing = unit(2, "lines"))  # adding space between panels
@@ -476,28 +427,13 @@ log+1 Transformation with Season color code
 
 
 #with season
-(mm_plot <- ggplot(dolphinz, aes(x = log1p(echo), y = log1p(dolphin), colour = season)) +
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(echo), y = log1p(dolphin))) +
       facet_wrap(~season, nrow=2) +   # a panel for each mountain range
-      geom_point(alpha = 0.5) +
+      geom_point(alpha = 0.5, colour = "dark blue") +
       theme_classic() + labs(x  =  "Total Echo Bouts Detected", y = "Total Dolphins Sighted") +
       theme(legend.position = "none",
             panel.spacing = unit(2, "lines"))  # adding space between panels
 )
-```
-
-
-```{r}
-#season
-(colour_plot <- ggplot(dolphinz, aes(x = log1p(echo), y = log1p(dolphin), colour = season)) +
-  geom_point(size = 2) +
-  theme_classic() +
-    theme(legend.position = "right") + labs(x='Echo Bout Abundance', y = 'Sighting Abundance'))
-#site
-(colour_plot <- ggplot(dolphinz, aes(x = log1p(echo), y = log1p(dolphin), colour = site)) +
-  geom_point(size = 2) +
-  theme_classic() +
-    theme(legend.position = "right") + labs(x='Echo Bout Abundance', y = 'Sighting Abundance'))
-
 ```
 
 
@@ -535,19 +471,12 @@ abline(a=0, b=1)
 
 plot(predict(bplog.lm, type='response'), residuals(bplog.lm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
 ```
-```{r}
-library(car)
-Anova(bplog.lm)
-#remove drum, trout, noiseratio
-```
 
 ```{r}
-library(ggplot2)  # load the package
 
-par(mfrow=c(2,2))
-(prelim_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = dolphin)) +
-  geom_point() +
-  geom_smooth(method = "lm"))
+(prelim_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = log1p(dolphin))) +
+  geom_point() + theme_classic() +
+  geom_smooth(method = "glm"))
 
 ```
 
@@ -575,9 +504,9 @@ ggscatter(dolphinz, x = "toad", y = "echo",
 log+1 Transformation with Season color code
 ```{r}
 #with site
-(mm_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = dolphin, colour = site)) +
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = dolphin)) +
       facet_wrap(~site, nrow=2) +   # a panel for each mountain range
-      geom_point(alpha = 0.5) +
+      geom_point(alpha = 0.5, colour = "dark green") +
       theme_classic() +  labs(x  =  "Total Burst Pulses Detected", y = "Total Dolphins Sighted") +
       theme(legend.position = "none",
             panel.spacing = unit(2, "lines"))  # adding space between panels
@@ -585,28 +514,35 @@ log+1 Transformation with Season color code
 
 
 #with season
-(mm_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = dolphin, colour = season)) +
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = dolphin)) +
       facet_wrap(~season, nrow=2) +   # a panel for each mountain range
-      geom_point(alpha = 0.5) +
+      geom_point(alpha = 0.5, colour = "dark green") +
       theme_classic() +  labs(x  =  "Total Burst Pulses Detected", y = "Total Dolphins Sighted") +
       theme(legend.position = "none",
             panel.spacing = unit(2, "lines"))  # adding space between panels
 )
 ```
 
-
 ```{r}
-#season
-(colour_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = dolphin, colour = season)) +
-  geom_point(size = 2) +
-  theme_classic() +
-    theme(legend.position = "right") + labs(x='Burst Pulse Abundance', y = 'Sighting Abundance'))
-#site
-(colour_plot <- ggplot(dolphinz, aes(x = log1p(bp), y = dolphin, colour = site)) +
-  geom_point(size = 2) +
-  theme_classic() +
-    theme(legend.position = "right") + labs(x='Burst Pulse Abundance', y = 'Sighting Abundance'))
+my_BuPu <- brewer.pal(n = 9, "BuPu")[3:9]
 
+bptotal <- ggplot(dolphinz, aes((log1p(bp)),(log1p(dolphin)))) +
+  geom_point(aes(group = site, color = site),  size = 3.5)+
+  xlab("Total Burst Pulses Detected") + ylab("Total Dolphins Sighted") +
+  scale_color_manual(name = "Survey Area", values  = my_BuPu)+
+  scale_y_continuous(breaks = pretty_breaks()) + 
+  theme_classic() +
+  scale_x_continuous(breaks = pretty_breaks())
+bptotal
+
+bptotalszn <- ggplot(dolphinz, aes((log1p(bp)),(log1p(dolphin)))) +
+  geom_point(aes(group = season, color = season),  size = 3.5)+
+  xlab("Total Burst Pulses Detected") + ylab("Total Dolphins Sighted") +
+  scale_color_manual(name = "Season", values  = my_BuPu)+
+  scale_y_continuous(breaks = pretty_breaks()) + 
+  theme_classic() +
+  scale_x_continuous(breaks = pretty_breaks())
+bptotalszn
 ```
 
 ```{r}
@@ -655,16 +591,9 @@ abline(a=0, b=1)
 
 plot(predict(whlog.lm, type='response'), residuals(whlog.lm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
 ```
-```{r}
-library(car)
-Anova(whlog.lm)
-#remove drum, trout, noiseratio
-```
 
 ```{r}
-library(ggplot2)  # load the package
 
-par(mfrow=c(2,2))
 (prelim_plot <- ggplot(dolphinz, aes(x = log1p(whist), y = log1p(dolphin))) +
   geom_point() + theme_classic() +
   geom_smooth(method = "glm"))
@@ -675,35 +604,43 @@ par(mfrow=c(2,2))
 log+1 Transformation with Season color code
 ```{r}
 #with site
-(mm_plot <- ggplot(dolphinz, aes(x = log1p(whist), y = log1p(dolphin), colour = site)) +
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(whist), y = log1p(dolphin))) +
       facet_wrap(~site, nrow=2) +   # a panel for each mountain range
-      geom_point(alpha = 0.5) +
+      geom_point(alpha = 0.5, colour = "orange") +
       theme_classic() + labs(x  =  "Total Whistles Detected", y = "Total Dolphins Sighted") +
       theme(legend.position = "none",
             panel.spacing = unit(2, "lines")))
 
 
 #with season
-(mm_plot <- ggplot(dolphinz, aes(x = log1p(whist), y = log1p(dolphin), colour = season)) +
+(mm_plot <- ggplot(dolphinz, aes(x = log1p(whist), y = log1p(dolphin))) +
       facet_wrap(~season, nrow=2) +   # a panel for each mountain range
-      geom_point(alpha = 0.5) +
+      geom_point(alpha = 0.5, colour = "orange") +
       theme_classic() +  labs(x  =  "Total Whistles Detected", y = "Total Dolphins Sighted") +
       theme(legend.position = "none",
             panel.spacing = unit(2, "lines")))
 ```
 
 ```{r}
-#season
-(colour_plot <- ggplot(dolphinz, aes(x = log1p(whist), y = dolphin, colour = season)) +
-  geom_point(size = 2) +
-  theme_classic() +
-    theme(legend.position = "right"))
-#site
-(colour_plot <- ggplot(dolphinz, aes(x = log1p(whist), y = dolphin, colour = site)) +
-  geom_point(size = 2) +
-  theme_classic() +
-    theme(legend.position = "right"))
+my_BuPu <- brewer.pal(n = 9, "BuPu")[3:9]
 
+whtotal <- ggplot(dolphinz, aes((log1p(whist)),(log1p(dolphin)))) +
+  geom_point(aes(group = site, color = site),  size = 3.5)+
+  xlab("Total Whistles Detected") + ylab("Total Dolphins Sighted") +
+  scale_color_manual(name = "Survey Area", values  = my_BuPu)+
+  scale_y_continuous(breaks = pretty_breaks()) + 
+  theme_classic() +
+  scale_x_continuous(breaks = pretty_breaks())
+whtotal
+
+whtotalszn <- ggplot(dolphinz, aes((log1p(whist)),(log1p(dolphin)))) +
+  geom_point(aes(group = season, color = season),  size = 3.5)+
+  xlab("Total Whistles Detected") + ylab("Total Dolphins Sighted") +
+  scale_color_manual(name = "Season", values  = my_BuPu)+
+  scale_y_continuous(breaks = pretty_breaks()) + 
+  theme_classic() +
+  scale_x_continuous(breaks = pretty_breaks())
+whtotalszn
 ```
 
 ```{r}
@@ -723,19 +660,5 @@ whsite_boxplot = ggplot(data=dolphinz, aes(x=site, y=log1p(whist), fill = season
 
 whsite_boxplot
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ---
