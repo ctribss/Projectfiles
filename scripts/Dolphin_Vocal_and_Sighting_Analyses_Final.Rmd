@@ -532,7 +532,7 @@ dosite
 
 
 totlsite <- ggplot(dolphinz, aes(x=site, y=log1p(total))) + facet_wrap(~season)+
-  geom_jitter(colour="gray19", alpha=0.5, width=0.1) +
+  geom_jitter(colour="gray1", alpha=0.5, width=0.1) +
   stat_summary(geom = "point", fun = "mean", size = 2) + 
   geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
   labs(x="Survey Area", y="Log+1(Total Vocalizations) mean + 95%CI") +
@@ -660,7 +660,7 @@ OLs term plot - for glm residuals of my response given other factors residuals o
 
 BP - GLM Model
 ```{r}
-bplog.glm <- glm(log1p(bp) ~ dolphin + site + season + site*season + drum  + trout, data = dolphinz)
+bplog.glm <- glm(log1p(bp) ~ dolphin + site + season + site*season + drum + trout, data = dolphinz)
 summary(bplog.glm)
 #without log+1(total) AIC = 790.99
 #with Site*Season interaction AIC = 238.14
@@ -693,19 +693,19 @@ plot(bp.glmpois)
 ```{r}
 #Followed up with a likelihood ratio test to compare the effects of each factor - TOTAL VOCALS
 
-bplog.glm <- glm(log1p(bp) ~ dolphin + site + season + drum + toad + trout, data = dolphinz)
-bplog.glm2 <- glm(log1p(bp) ~ site + season + drum + toad + trout, data = dolphinz)
-bplog.glm3 <- glm(log1p(bp) ~ dolphin + season + drum + toad + trout, data = dolphinz)
-bplog.glm4 <- glm(log1p(bp) ~ dolphin + site + drum + toad + trout, data = dolphinz)
-bplog.glm5 <- glm(log1p(bp) ~ dolphin + site + season + toad + trout, data = dolphinz)
+bplog.glm <- glm(log1p(bp) ~ dolphin + site + season + drum + site*season + trout, data = dolphinz)
+bplog.glm2 <- glm(log1p(bp) ~ site + season + drum + site*season + trout, data = dolphinz)
+bplog.glm3 <- glm(log1p(bp) ~ dolphin + season + drum + site*season + trout, data = dolphinz)
+bplog.glm4 <- glm(log1p(bp) ~ dolphin + site + drum  + site*season +  trout, data = dolphinz)
+bplog.glm5 <- glm(log1p(bp) ~ dolphin + site + season  + site*season + trout, data = dolphinz)
 bplog.glm6 <- glm(log1p(bp) ~ dolphin + site + season + drum + trout, data = dolphinz)
-bplog.glm7 <- glm(log1p(bp) ~ dolphin + site + season + drum + toad, data = dolphinz)
+bplog.glm7 <- glm(log1p(bp) ~ dolphin + site + season + drum + site*season, data = dolphinz)
 
 lrtest(bplog.glm, bplog.glm2) #dolphin
 lrtest(bplog.glm, bplog.glm3) #site
 lrtest(bplog.glm, bplog.glm4) #season
 lrtest(bplog.glm, bplog.glm5) #drum
-lrtest(bplog.glm, bplog.glm6) #toad
+lrtest(bplog.glm, bplog.glm6) #site*season
 lrtest(bplog.glm, bplog.glm7) #trout
 ```
 
@@ -782,16 +782,16 @@ plot(wh.glmpois)
 ```{r}
 #Followed up with a likelihood ratio test to compare the effects of each factor - WHISTLES
 
-whlog.glm <- glm(log1p(whist) ~ dolphin + site + season + trout, data = dolphinz)
-whlog.glm2 <- glm(log1p(whist) ~ site + season + trout, data = dolphinz)
-whlog.glm3 <- glm(log1p(whist) ~ dolphin + season + trout, data = dolphinz)
-whlog.glm4 <- glm(log1p(whist) ~ dolphin + site + trout, data = dolphinz)
+whlog.glm <- glm(log1p(whist) ~ dolphin + site + season + site*season, data = dolphinz)
+whlog.glm2 <- glm(log1p(whist) ~ site + season + site*season, data = dolphinz)
+whlog.glm3 <- glm(log1p(whist) ~ dolphin + season + site*season, data = dolphinz)
+whlog.glm4 <- glm(log1p(whist) ~ dolphin + site + site*season, data = dolphinz)
 whlog.glm5 <- glm(log1p(whist) ~ dolphin + site + season, data = dolphinz)
 
 lrtest(whlog.glm, whlog.glm2) #dolphin
 lrtest(whlog.glm, whlog.glm3) #site
 lrtest(whlog.glm, whlog.glm4) #season
-lrtest(whlog.glm, whlog.glm5) #trout
+lrtest(whlog.glm, whlog.glm5) #site*season
 ```
 
 
