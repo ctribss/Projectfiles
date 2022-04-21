@@ -371,7 +371,7 @@ ggscatter(dolphinz, x = "dolphin", y = "total",
           add = "reg.line",                         
           conf.int = TRUE ,      
  xlab = "Total Dolphins Sighted", ylab = "Log+1(Total Vocalizations Detected)") +
-  stat_cor(aes(x=dolphin, y=resid(total)), label.x = 20)
+  stat_cor(aes(x=dolphin, y=total), label.x = 20)
 
 #Testing Assumptions of Pearson's Correlation
 
@@ -402,7 +402,7 @@ visreg(elog.glm, "dolphin", ylab = "Predicted Log+1(Total Echo Bouts Detected)",
 visreg(bplog.glm, "dolphin", ylab = "Predicted Log+1(Total Burst Pulses Detected)", xlab = "Total Dolphins Sighted")
 visreg(whlog.glm, "dolphin", ylab = "Predicted Log+1(Total Whistles Detected)", xlab = "Total Dolphins Sighted")
 ```
-OLs term plot - for glm residuals of my response given other factors residuals of that ~ factor of interest
+
 ```{r}
 #Plots comparing dolphins sightings and vocalization detections across Station and Season by their means + 95% confidence intervals to display significnat differences identified by the model 
 
@@ -504,7 +504,7 @@ whistszn <- ggplot(dolphinz, aes(x=season, y=log1p(whist))) +
 
 
 
-grid.arrange(dolphsite, totsite, ncol=2)
+require grid
 grid.arrange(dolphsite, echosite, ncol=2)
 grid.arrange(dolphsite, bpsite, ncol=2)
 grid.arrange(dolphsite, whistsite, ncol=2)
@@ -574,7 +574,7 @@ whistlsite
 
 ECHO GLM regression
 ```{r}
-elog.glm <- glm(echo ~ dolphin + site + season + perch + drum, data = dolphinz)
+elog.glm <- glm(log1p(echo) ~ dolphin + site + season + perch + drum, data = dolphinz)
 summary(elog.glm)
 #without log+1(total) AIC = 930.88
 #with Site*Season interaction AIC = 342.96
@@ -710,6 +710,24 @@ lrtest(bplog.glm, bplog.glm7) #trout
 ```
 
 ```{r}
+
+par(mfrow=c(1,2))
+
+plot(predict(elog.glm), log1p(dolphinz$echo), xlab='Predicted Echo Bouts', ylab='Observed Echo Bouts', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(elog.glm, type='response'), residuals(elog.glm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+
+
+par(mfrow=c(1,2))
+
+plot(predict(echo.glmnb), dolphinz$echo, xlab='Predicted Echo Bouts', ylab='Observed Echo Bouts', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(echo.glmnb, type='response'), residuals(echo.glmnb, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+
+
+
 par(mfrow=c(1,2))
 
 plot(predict(bplog.glm), log1p(dolphinz$bp), xlab='Predicted Burst Pulses', ylab='Observed Burst Pulses', main = 'Model Predictability')
