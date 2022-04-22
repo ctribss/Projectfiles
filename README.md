@@ -11,13 +11,12 @@ Structure of Code Base:
 Project working directory:
 Main project broken into 4 folders: data, scripts, figs, and presentations
 
-data folder (): Contains raw data file (raw_sighting_data) and files to be used in analysis (dsite, dmonth)
+data folder (): Contains raw data file (raw_sighting_data) and files to be used in analysis (bimonthly)
   - raw_sighting_data.csv contains all sighting/vocalization data before any summarizing 
-  - dsite.csv was used in analysis and contains all sighting/vocalization data summed for each survey at        each station 
-  - dmonth.csv contains all sighting/vocalization data summed monthly at each station
+  - bimonthly.csv contains all sighting/vocalization data summed bimonthly at each station
  
 scripts folder ():
-  - Dolphin_Vocal_and_Sighting_Analyses.Rmd contains preliminary analyses 
+  - Dolphin_Vocal_and_Sighting_Analyses_Rough.Rmd contains preliminary analyses 
   - Dolphin_Vocal_and_Sighting_Analyses_Final.Rmd contains R code for final analyses, cleaned up and            annotated for reproducibility
   
 figures folder (): 

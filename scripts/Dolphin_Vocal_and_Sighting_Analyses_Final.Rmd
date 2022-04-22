@@ -17,43 +17,10 @@ library(visreg)
 ```
 
 ```{r}
-install.packages("extrafont")
-library(extrafont)
+#set to working directory
+setwd("/Users/caroline/Projectfiles")
+dolphinz <- read.csv("./data/bimonthly.csv")
 
-theme_Publication <- function(base_size=12, base_family="helvetica") {
-      library(grid)
-      library(ggthemes)
-      (theme_foundation(base_size=base_size, base_family=base_family)
-       + theme(plot.title = element_text(size = rel(1.2), hjust = 0.5),
-               text = element_text(),
-               panel.background = element_rect(colour = NA),
-               plot.background = element_rect(colour = NA),
-               panel.border = element_rect(colour = NA),
-               axis.title = element_text(size = rel(1.0)),
-               axis.title.y = element_text(angle=90,vjust =2),
-               axis.title.x = element_text(vjust = -0.2),
-               axis.text = element_text(), 
-               axis.line = element_line(colour="black"),
-               axis.ticks = element_line(),
-               panel.grid.major = element_line(colour="#f0f0f0"),
-               panel.grid.minor = element_blank(),
-               legend.key = element_rect(colour = NA),
-               legend.position = "right",
-               legend.text = element_text(size = rel(1)),
-               legend.key.size= unit(0.5, "mm"),
-               legend.spacing = unit(0.5, "mm"),
-               legend.title = element_text(face="italic", size = rel(1.0)),
-               plot.margin=unit(c(5,5,5,5),"mm"),
-               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
-               strip.text = element_text()
-          ))
-      
-}
-```
-
-```{r}
-#data import
-dolphinz <- read.csv("~/Desktop/Sighting Data/bimonthly.csv")
 #specify categorical factors
 dolphinz$site <- factor(dolphinz$site)
 dolphinz$season <- factor(dolphinz$season)
@@ -101,22 +68,24 @@ Model Testing -
 
 ```{r}
 #First basic regression not including other environmental, temporal, and spatial factors 
-#R squared value is very low, likely due to not including the other factors likely at play explaining the relationship
+#R squared value is very low, likely due to not including the other factors important to relationship 
 
-#Multiple regression including all factors I want to assess -- overfitting the data, move forward with glm and then tukeys hsd mult comparisons for factors and pearson correlations for continuous variables that are significant. 
+#Multiple regression including all factors I want to assess -- it looks really good, but I'm worried I'm overfitting the data with all these factors, move forward with glm and then tukey kramer hsd mult comparisons for significant categorical factors. 
 
-#Multiple llinear regression was first attempted but due to the large number of factors included moved forward
-#with general linear modeling. Tested multiple models (Poisson, Negative Binomial, Gaussian with no transforms,
-# and Gaussian with transformations) and compared using AIC criteria, landing on a model with log+1 transformations of total vocalizations and total dolphins sighted.
+#Tested multiple models (Poisson, Negative Binomial, Gaussian with no transforms, and Gaussian with transformations) and compared using AIC criteria, landing on a model with log+1 transformations of total vocalizations, echos, burst pulses, and whistles.
 
 basictot_lm <- lm(log1p(total) ~ dolphin, data = dolphinz)
 summary(basictot_lm)
 plot(basictot_lm)
-#R squared ~ 0.2
+#R squared = 0.2
 
-multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + toad + trout + noiseratio, data = dolphinz)
+multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz)
 summary(multtot_lm)
 plot(multtot_lm)
+#R squared  = 0.535, Adjusted = 0.4651
+stepAIC(multtot_lm)
+#remove noiseratio and toadfish
+#new R squared  = 0.535, Adjusted = 0.4761
 
 par(mfrow=c(1,2))
 plot(predict(multtot_lm), log1p(dolphinz$total), xlab='Predicted Total Vocalizations', ylab='Observed Total Vocalizations', main = 'Model Predictability')
