@@ -1,0 +1,820 @@
+---
+title: "Dolphin_Vocal_Sighting_Analyses_Final_Bimonthly"
+output: html_document
+---
+
+```{r}
+#packages required
+library(scales)
+library(MASS)
+library(ggplot2)
+require(gridExtra)
+library(ggpubr)
+library(car)
+library(RColorBrewer)
+library(DTK)
+library(lmtest)
+library(visreg)
+library(multcomp)
+library(multcompView)
+```
+
+```{r}
+#set to working directory
+setwd("/Users/caroline/Projectfiles")
+dolphinz <- read.csv("./data/bimonthly.csv")
+
+#specify categorical factors
+dolphinz$site <- factor(dolphinz$site)
+dolphinz$season <- factor(dolphinz$season)
+dolphinz$season <- factor(dolphinz$season, levels = c("Winter", "Spring", "Summer", "Fall"))
+dolphinz$site <- factor(dolphinz$site, levels = c("Citadel","Ashley River","Ft Sumter","SC Aquarium", "Drum Island","Wando River"))
+#Citadel site considered 'control' because this is in the upper Ashley River where we see the least vocalizations and dolphins
+
+#subset data to look at histograms of vocalization and sightiing frequency across survey areas
+stna <-  subset(dolphinz, site=="Wando River")
+stnc <- subset(dolphinz, site=="SC Aquarium")
+stnb <-  subset(dolphinz, site=="Drum Island")
+stnd <-  subset(dolphinz, site=="Ft Sumter")
+stne <- subset(dolphinz, site=="Ashley River")
+stnf <-  subset(dolphinz, site=="Citadel")
+```
+
+```{r}
+#overall histograms showing vocalization and sighting frequency respectively
+par(mfrow=c(1,2))
+hist(dolphinz$total,  xlab = "Total Number of Vocalizations", breaks = 8, main = "Vocalization Frequency")
+hist(dolphinz$dolphin,  xlab = "Total Number of Dolphins", main = "Sighting Frequency") 
+```
+
+```{r}
+#histograms for vocalization detection and dolphin sighting frequency sighted at stations A, B, and C
+par(mfrow=c(2,3))
+hist(stna$total,  xlab = "Total Number of Vocalizations", main = "Wando River") 
+hist(stnb$total,  xlab = "Total Number of Vocalizations", main = "Drum Island") 
+hist(stnc$total,  xlab = "Total Number of Vocalizations", main = "SC Aquarium") 
+hist(stna$dolphin,  xlab = "Total Number of Dolphins", main = "Wando River") 
+hist(stnb$dolphin,  xlab = "Total Number of Dolphins", main = "Drum Island") 
+hist(stnc$dolphin,  xlab = "Total Number of Dolphins", main = "SC Aquarium") 
+```
+```{r}
+#histograms for vocalization detection and dolphin sighting frequency sighted at stations D, E, and F
+par(mfrow=c(2,3))
+hist(stnd$total,  xlab = "Total Number of Vocalizations", main = "Ft Sumter") 
+hist(stne$total,  xlab = "Total Number of Vocalizations", main = "Ashley River") 
+hist(stnf$total,  xlab = "Total Number of Vocalizations", main = "Citadel") 
+hist(stnd$dolphin,  xlab = "Total Number of Dolphins", main = "Ft Sumter") 
+hist(stne$dolphin,  xlab = "Total Number of Dolphins", main = "Ashley River") 
+hist(stnf$dolphin,  xlab = "Total Number of Dolphins", main = "Citadel") 
+```
+
+Model Testing -
+```{r}
+#First basic regression not including other environmental, temporal, and spatial factors 
+#R squared value is very low, likely due to not including the other factors important to relationship 
+
+#Multiple regression including all factors I want to assess -- it looks really good, but I'm worried I'm overfitting the data with all these factors, moved forward with testing glm across multiple distribution models and then for post hoc tests used likelihood ratio chi-square for assessing significance of all factors and then tukey kramer hsd multiple comparison of means for significant categorical factors. 
+
+#Tested multiple GLM models (Poisson, Negative Binomial, Gaussian with no transforms, and Gaussian with transformations) and compared using AIC criteria, landing on a GLM with log+1 transformations of total vocalizations, echos, burst pulses, and whistles.
+
+#First tested the possible effect of calf presence by separating total dolphin count into adult and calf
+#Found no significant effect and the model shows significantly lower AIC and in testing model with AIC 
+#the model was better if calf was dropped (AIC lesser by 2 points) 
+
+#In the end the Gaussian GLM with log+1 transformation looked best, used pseudo R-squared values
+
+basictot_lm <- lm(log1p(total) ~ dolphin, data = dolphinz)
+summary(basictot_lm)
+plot(basictot_lm)
+#R squared = 0.2
+
+multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz)
+summary(multtot_lm)
+plot(multtot_lm)
+#R squared  = 0.535, Adjusted = 0.4651
+stepAIC(multtot_lm)
+#remove noiseratio and toadfish
+#new R squared  = 0.535, Adjusted = 0.4761
+
+par(mfrow=c(1,2))
+plot(predict(multtot_lm), log1p(dolphinz$total), xlab='Predicted Total Vocalizations', ylab='Observed Total Vocalizations', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(multtot_lm, type='response'), residuals(multtot_lm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+```
+
+```{r}
+#Followed up with a likelihood ratio test to compare the effects of each factor - TOTAL VOCALS
+
+
+multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz)
+multtot_lm1 <- lm(log1p(total) ~ site + season + drum + perch + trout, data = dolphinz)
+multtot_lm2 <- lm(log1p(total) ~ dolphin + season + drum + perch + trout, data = dolphinz)
+multtot_lm3 <- lm(log1p(total) ~ dolphin + site + drum + perch + trout, data = dolphinz)
+multtot_lm4 <- lm(log1p(total) ~ dolphin + site + season + perch + trout, data = dolphinz)
+multtot_lm5 <- lm(log1p(total) ~ dolphin + site + season + drum + trout, data = dolphinz)
+multtot_lm6 <- lm(log1p(total) ~ dolphin + site + season + drum + perch, data = dolphinz)
+
+lrtest(multtot_lm,multtot_lm1) #dolphin
+lrtest(multtot_lm,multtot_lm2) #site
+lrtest(multtot_lm,multtot_lm3) #season
+lrtest(multtot_lm,multtot_lm4) #drum
+lrtest(multtot_lm,multtot_lm5) #perch
+lrtest(multtot_lm,multtot_lm6) #trout
+```
+
+```{r}
+library(vegan)
+total_pca <- rda(dolphinz$total ~ dolphinz$dolphin + dolphinz$site + dolphinz$season + dolphinz$drum + dolphinz$perch, scale = TRUE)
+
+plot(total_pca)
+ordiplot(total_pca)
+```
+
+
+
+```{r}
+#TOTAL VOCALIZATIONS - GLM with Log + 1 transformation of total summed dolphin vocalizations
+
+logtotal.glm <- glm(log1p(total) ~ dolphin + site + season + drum + perch, data = dolphinz)
+summary(logtotal.glm)
+#without log+1(total) AIC = 1033.9
+#with log+1(dolphin) AIC = 349.7
+#without toadfish, seatrout, noiseratio or site*station interaction factors - AIC = 342.98
+#with Site*Season interaction AIC = 348.62
+plot(logtotal.glm)
+
+stepAIC(logtotal.glm)
+#remove noise ratio, toad, trout
+```
+
+```{r}
+#pseudo R-squared
+with(summary(logtotal.glm), 1 - deviance/null.deviance)
+```
+
+```{r}
+#Can see degrees of freedom, sum of squares, and p-values for each variable against total vocals
+alog.glm <- aov(logtotal.glm)
+summary(alog.glm)
+```
+```{r}
+#Testing Negative Binomial and Poisson GLM distributions
+total.glmnb <- glm.nb(total ~ dolphin + site + season + perch, data = dolphinz)
+summary(total.glmnb)
+plot(total.glmnb)
+#AIC 678.03
+
+total.glmpois <- glm(total ~ dolphin + site + season + perch, family = poisson, data = dolphinz)
+summary(total.glmpois)
+plot(total.glmpois)
+#AIC 2033
+
+#Gaussian GLM with Log+1 transformation of total vocalizations best model fit - AIC 346.61
+```
+
+```{r}
+#Followed up with a likelihood ratio test to compare the effects of each factor - TOTAL VOCALS
+
+logtotal.glm <- glm(log1p(total) ~ dolphin + site + season + perch + drum, data = dolphinz)
+logtotal.glm2 <- glm(log1p(total) ~ site + season + perch +  drum, data = dolphinz)
+logtotal.glm3 <- glm(log1p(total) ~ dolphin + season + perch + drum, data = dolphinz)
+logtotal.glm4 <- glm(log1p(total) ~ dolphin + site + perch + drum, data = dolphinz)
+logtotal.glm5 <- glm(log1p(total) ~ dolphin + site + season + drum, data = dolphinz)
+logtotal.glm6 <- glm(log1p(total) ~ dolphin + site + season + perch, data = dolphinz)
+
+lrtest(logtotal.glm, logtotal.glm2) #dolphin
+lrtest(logtotal.glm, logtotal.glm3) #site
+lrtest(logtotal.glm, logtotal.glm4) #season
+lrtest(logtotal.glm, logtotal.glm5) #perch
+lrtest(logtotal.glm, logtotal.glm6) #drum
+```
+
+```{r}
+#Tukey Kramer HSD post hoc tests to determine which seasons and sites are most significant
+#multcomp is to assign letters of significance for displaying on figures in a compact letter display (more in chunk below)
+
+#total vocalizations
+Tuk_szn <-  glht(logtotal.glm, mcp(season="Tukey"))
+Tuk_site <- glht(logtotal.glm, mcp(site="Tukey"))
+Tuk_szn
+Tuk_site
+
+multcomp::cld(Tuk_szn)
+multcomp::cld(Tuk_site)
+
+#echo bouts
+ecTuk_szn <-  glht(elog.glm, mcp(season="Tukey"))
+ecTuk_site <- glht(elog.glm, mcp(site="Tukey"))
+ecTuk_szn
+ecTuk_site
+
+multcomp::cld(ecTuk_szn)
+multcomp::cld(ecTuk_site)
+
+
+#burst pulses
+bpTuk_szn <-  glht(bplog.glm, mcp(season="Tukey"))
+bpTuk_site <- glht(bplog.glm, mcp(site="Tukey"))
+summary(bpTuk_szn)
+summary(bpTuk_site)
+
+multcomp::cld(bpTuk_szn)
+multcomp::cld(bpTuk_site)
+
+
+#whistles
+whTuk_szn <-  glht(whlog.glm, mcp(season="Tukey"))
+whTuk_site <- glht(whlog.glm, mcp(site="Tukey"))
+summary(whTuk_szn)
+summary(whTuk_site)
+
+multcomp::cld(whTuk_szn)
+multcomp::cld(whTuk_site)
+
+```
+
+
+
+```{r}
+#Using letters created above...
+#Compact letter display to show what was significantly different seasonally based on post-hoc tests
+#Looking at both categorical factors that were found to be significantly affecting vocalization patterns (Season)
+#for all vocalization types (Total, Echos, Bps, and Whistles)
+
+tot_text <- data.frame(season = character(), total = double(), lab = character())
+totszn1 <- data.frame(season = "Winter", total = 4.5,lab = "c")
+names(totszn1) = c("Season", "Total", "lab")
+totszn2 <- data.frame(season = "Spring", total = 4.5,lab = "a")
+names(totszn2) = c("Season", "Total", "lab")  
+totszn3 <- data.frame(season = "Summer", total = 4.5,lab = "ab")
+names(totszn3) = c("Season", "Total", "lab")  
+totszn4 <- data.frame(season = "Fall", total = 4.7,lab = "bc")
+names(totszn4) = c("Season", "Total", "lab")
+
+tot_text1 = rbind(tot_text,totszn1,totszn2,totszn3,totszn4)
+
+ec_text <- data.frame(season = character(), echo = double(), lab = character())
+ecszn1 <- data.frame(season = "Winter", echo = 4.9,lab = "bc")
+names(ecszn1) = c("Season", "Echos", "lab")
+ecszn2 <- data.frame(season = "Spring", echo = 4.5,lab = "a")
+names(ecszn2) = c("Season", "Echos", "lab")  
+ecszn3 <- data.frame(season = "Summer", echo = 4.5,lab = "ab")
+names(ecszn3) = c("Season", "Echos", "lab")  
+ecszn4 <- data.frame(season = "Fall", echo = 4.97,lab = "c")
+names(ecszn4) = c("Season", "Echos", "lab")
+
+ec_text1 = rbind(ec_text,ecszn1,ecszn2,ecszn3,ecszn4)
+
+bp_text <- data.frame(season = character(), bp = double(), lab = character())
+bpszn1 <- data.frame(season = "Winter", bp = 4,lab = "b")
+names(bpszn1) = c("Season", "Bps", "lab")
+bpszn2 <- data.frame(season = "Spring", total = 2.5,lab = "a")
+names(bpszn2) = c("Season", "Bps", "lab")  
+bpszn3 <- data.frame(season = "Summer", total = 2.5,lab = "a")
+names(bpszn3) = c("Season", "Bps", "lab")  
+bpszn4 <- data.frame(season = "Fall", total = 3.5,lab = "a")
+names(bpszn4) = c("Season", "Bps", "lab")
+
+bp_text1 = rbind(bp_text,bpszn1,bpszn2,bpszn3,bpszn4)
+
+
+whist_text <- data.frame(season = character(), whist = double(), lab = character())
+whszn1 <- data.frame(season = "Winter", whist = 4.38,lab = "c")
+names(whszn1) = c("Season", "Whistles", "lab")
+whszn2 <- data.frame(season = "Spring", whist = 3.5,lab = "a")
+names(whszn2) = c("Season", "Whistles", "lab")  
+whszn3 <- data.frame(season = "Summer", whist = 1.5,lab = "ab")
+names(whszn3) = c("Season", "Whistles", "lab")  
+whszn4 <- data.frame(season = "Fall", whist = 2.5,lab = "bc")
+names(whszn4) = c("Season", "Whistles", "lab")
+
+whist_text1 = rbind(whist_text,whszn1,whszn2,whszn3,whszn4)
+```
+
+```{r}
+#Using letters created above...
+#Compact letter display to show what was significantly different spatially across sites based on post-hoc tests
+#Looking at both categorical factors that were found to be significantly affecting vocalization patterns (Site)
+#for all vocalization types (Total, Echos, Bps, and Whistles)
+
+totsite_text <- data.frame(site = character(), total = double(), lab = character())
+totcitdl <- data.frame(site = "Citadel", total = 4.5,lab = "ab")
+names(totcitdl) = c("Site", "Total", "lab")
+totashr <- data.frame(site = "Ashley River", total = 4.5,lab = "b")
+names(totashr) = c("Site", "Total", "lab")  
+totftsum <- data.frame(site = "Ft Sumter", total = 4,lab = "b")
+names(totftsum) = c("Site", "Total", "lab")  
+totaqua <- data.frame(site = "SC Aquarium", total = 4.85,lab = "c")
+names(totaqua) = c("Site", "Total", "lab")
+totdrum <- data.frame(site = "Drum Island", total = 4.7,lab = "ac")
+names(totdrum) = c("Site", "Total", "lab")
+totwand <- data.frame(site = "Wando River", total = 4.5,lab = "bc")
+names(totwand) = c("Site", "Total", "lab")
+
+totsite_text1 = rbind(totsite_text,totcitdl,totashr,totftsum,totaqua,totdrum,totwand)
+
+ecsite_text <- data.frame(site = character(), echo = double(), lab = character())
+eccitdl <- data.frame(site = "Citadel", echo = 4.5,lab = "a")
+names(eccitdl) = c("Site", "Echos", "lab")
+ecashr <- data.frame(site = "Ashley River", echo = 4.5,lab = "a")
+names(ecashr) = c("Site", "Echos", "lab")  
+ecftsum <- data.frame(site = "Ft Sumter", echo = 4,lab = "a")
+names(ecftsum) = c("Site", "Echos", "lab")  
+ecaqua <- data.frame(site = "SC Aquarium", echo = 4.96,lab = "b")
+names(ecaqua) = c("Site", "Echos", "lab")
+ecdrum <- data.frame(site = "Drum Island", echo = 4.7,lab = "ab")
+names(ecdrum) = c("Site", "Echos", "lab")
+ecwand <- data.frame(site = "Wando River", echo = 4.4,lab = "ab")
+names(ecwand) = c("Site", "Echos", "lab")
+
+ecsite_text1 = rbind(ecsite_text,eccitdl,ecashr,ecftsum,ecaqua,ecdrum,ecwand)
+
+bpsite_text <- data.frame(site = character(), bp = double(), lab = character())
+bpcitdl <- data.frame(site = "Citadel", bp = 2,lab = "a")
+names(bpcitdl) = c("Site", "Bps", "lab")
+bpashr <- data.frame(site = "Ashley River", bp = 1,lab = "a")
+names(bpashr) = c("Site", "Bps", "lab")  
+bpftsum <- data.frame(site = "Ft Sumter", bp = 2,lab = "a")
+names(bpftsum) = c("Site", "Bps", "lab")  
+bpaqua <- data.frame(site = "SC Aquarium", bp = 4,lab = "b")
+names(bpaqua) = c("Site", "Bps", "lab")
+bpdrum <- data.frame(site = "Drum Island", bp = 3.5,lab = "a")
+names(bpdrum) = c("Site", "Bps", "lab")
+bpwand <- data.frame(site = "Wando River", bp = 3,lab = "a")
+names(bpwand) = c("Site", "Bps", "lab")
+
+bpsite_text1 = rbind(bpsite_text,bpcitdl,bpashr,bpftsum,bpaqua,bpdrum,bpwand)
+
+whsite_text <- data.frame(site = character(), whist = double(), lab = character())
+whcitdl <- data.frame(site = "Citadel", whist = 3.2,lab = "ab")
+names(whcitdl) = c("Site", "Whistles", "lab")
+whashr <- data.frame(site = "Ashley River", whist = 2.5,lab = "ab")
+names(whashr) = c("Site", "Whistles", "lab")  
+whftsum <- data.frame(site = "Ft Sumter", whist = 2,lab = "a")
+names(whftsum) = c("Site", "Whistles", "lab")  
+whaqua <- data.frame(site = "SC Aquarium", whist = 3,lab = "ab")
+names(whaqua) = c("Site", "Whistles", "lab")
+whdrum <- data.frame(site = "Drum Island", whist = 4.3,lab = "b")
+names(whdrum) = c("Site", "Whistles", "lab")
+whwand <- data.frame(site = "Wando River", whist = 3,lab = "ab")
+names(whwand) = c("Site", "Whistles", "lab")
+
+whsite_text1 = rbind(whsite_text,whcitdl,whashr,whftsum,whaqua,whdrum,whwand)
+
+```
+
+
+QUESTION - partial correlation coeff run correlation on residuals rather than factor of interest ( do I need this? )
+```{r}
+#Plots to further assess the fit of my model, on the left predicted values based on the model compared to observed and on the right the residuals plotted against the fitted values to make sure there is no pattern
+par(mfrow=c(1,2))
+
+plot(predict(logtotal.glm), log1p(dolphinz$total), xlab='Predicted Total Vocalizations', ylab='Observed Total Vocalizations', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(logtotal.glm, type='response'), residuals(logtotal.glm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+```
+
+```{r}
+visreg(logtotal.glm, "dolphin", ylab = "Predicted Log+1(Total Vocalizations Detected)", xlab = "Total Dolphins Sighted")
+visreg(elog.glm, "dolphin", ylab = "Predicted Log+1(Total Echo Bouts Detected)", xlab = "Total Dolphins Sighted")
+visreg(bplog.glm, "dolphin", ylab = "Predicted Log+1(Total Burst Pulses Detected)", xlab = "Total Dolphins Sighted")
+visreg(whlog.glm, "dolphin", ylab = "Predicted Log+1(Total Whistles Detected)", xlab = "Total Dolphins Sighted")
+```
+
+```{r}
+#Plots comparing dolphins sightings and vocalization detections across Station and Season by their means + 95% confidence intervals to display significnat differences identified by the model 
+
+
+#TOTAL VOCALIZATIONS
+dolphsite <- ggplot(dolphinz, aes(x=site, y=dolphin)) + 
+  geom_jitter(colour="darkslategray4", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Total Dolphins Sighted mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) 
+
+dolphszn <- ggplot(dolphinz, aes(x=season, y=dolphin)) + 
+  geom_jitter(colour="darkslategray4", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Season", y="Total Dolphins Sighted mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) 
+
+totsite <- ggplot(dolphinz, aes(x=site, y=log1p(total))) + 
+  geom_jitter(colour="grey1", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Log+1(Total Vocalizations) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(x=totsite_text1$Site,y=totsite_text1$Total, aes(label = totsite_text1$lab), data = totsite_text1)
+
+totszn <- ggplot(dolphinz, aes(x=season, y=log1p(total))) + 
+  geom_jitter(colour="grey1", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Season", y="Log+1(Total Vocalizations) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(x=tot_text1$Season,y=tot_text1$Total, aes(label = tot_text1$lab), data = tot_text1)
+
+#ECHOLOCATION BOUTS
+echosite <- ggplot(dolphinz, aes(x=site, y=log1p(echo))) + 
+  geom_jitter(colour="blue4", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Log+1(Total Echo Bouts) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(x=ecsite_text1$Site,y=ecsite_text1$Echos, aes(label = ecsite_text1$lab), data = ecsite_text1)
+  
+
+echoszn <- ggplot(dolphinz, aes(x=season, y=log1p(echo))) + 
+  geom_jitter(colour="blue4", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Season", y="Log+1(Total Echo Bouts) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(x=ec_text1$Season,y=ec_text1$Echos, aes(label = ec_text1$lab), data = ec_text1)
+
+#BURST PULSES
+bpsite <- ggplot(dolphinz, aes(x=site, y=log1p(bp))) + 
+  geom_jitter(colour="dark green", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Log+1(Total Burst Pulses) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(x=bpsite_text1$Site,y=bpsite_text1$Bps, aes(label = bpsite_text1$lab), data = bpsite_text1)
+
+bpszn <- ggplot(dolphinz, aes(x=season, y=log1p(bp))) + 
+  geom_jitter(colour="dark green", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Season", y="Log+1(Total Burst Pulses) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(x=bp_text1$Season,y=bp_text1$Bps, aes(label = bp_text1$lab), data = bp_text1)
+
+#WHISTLES
+whistsite <- ggplot(dolphinz, aes(x=site, y=log1p(whist))) + 
+  geom_jitter(colour="goldenrod2", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Log+1(Total Whistles) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(x=whsite_text1$Site,y=whsite_text1$Whistles, aes(label = whsite_text1$lab), data = whsite_text1)
+
+
+whistszn <- ggplot(dolphinz, aes(x=season, y=log1p(whist))) + 
+  geom_jitter(colour="goldenrod2", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Season", y="Log+1(Total Whistles) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+  geom_text(x=whist_text1$Season,y=whist_text1$Whistles, aes(label = whist_text1$lab), data = whist_text1)
+
+
+
+
+require grid
+grid.arrange(dolphsite, echosite, ncol=2)
+grid.arrange(dolphsite, bpsite, ncol=2)
+grid.arrange(dolphsite, whistsite, ncol=2)
+
+grid.arrange(dolphszn, totszn, ncol=2)
+grid.arrange(dolphszn, echoszn, ncol=2)
+grid.arrange(dolphszn, bpszn, ncol=2)
+grid.arrange(dolphszn, whistszn, ncol=2)
+
+```
+
+supp figures broken down by site and season to see partitioning of the harbor
+```{r}
+#Supplemental figures that display seasonal patterns across stations in the same plots to see if this helps us visualize their use of the harbor
+
+
+dosite <- ggplot(dolphinz, aes(x=site, y=dolphin)) + facet_wrap(~season)+
+  geom_jitter(colour="darkslategray4", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Total Dolphins Sighted mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) 
+dosite
+
+
+totlsite <- ggplot(dolphinz, aes(x=site, y=log1p(total))) + facet_wrap(~season)+
+  geom_jitter(colour="gray1", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Log+1(Total Vocalizations) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) 
+totlsite
+
+
+echozsite <- ggplot(dolphinz, aes(x=site, y=log1p(echo))) + facet_wrap(~season)+
+  geom_jitter(colour="blue4", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Log+1(Total Echo Bouts) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) 
+echozsite
+
+
+bpzsite <- ggplot(dolphinz, aes(x=site, y=log1p(bp))) + facet_wrap(~season)+
+  geom_jitter(colour="dark green", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0) +
+  labs(x="Survey Area", y="Log+1(Total Burst Pulses) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) 
+bpzsite
+
+
+whistlsite <- ggplot(dolphinz, aes(x=site, y=log1p(whist))) + facet_wrap(~season)+
+  geom_jitter(colour="goldenrod2", alpha=0.5, width=0.1) +
+  stat_summary(geom = "point", fun = "mean", size = 2) + 
+  geom_errorbar(stat="summary", fun.data="mean_se", fun.args = list(mult = 1.96), width=0)+
+  labs(x="Survey Area", y="Log+1(Total Whistles) mean + 95%CI") +
+  theme_bw() + theme_classic() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) 
+  
+whistlsite
+```
+
+ECHO GLM regression
+```{r}
+elog.glm <- glm(log1p(echo) ~ dolphin + site + season + perch + drum, data = dolphinz)
+summary(elog.glm)
+#without log+1(total) AIC = 930.88
+#with Site*Season interaction AIC = 342.96
+#without toadfish, seatrout, noiseratio or site*station interaction factors - AIC = 338.99
+plot(elog.glm)
+
+stepAIC(elog.glm)
+#drop trout, toad, noiseratio
+```
+
+```{r}
+#Testing Negative Binomial and Poisson GLM distributions
+echo.glmnb <- glm.nb(echo ~ dolphin + site + season + perch, data = dolphinz)
+summary(echo.glmnb)
+plot(echo.glmnb)
+#AIC 607.03
+
+echo.glmpois <- glm(echo ~ dolphin + site + season + perch, family = poisson, data = dolphinz)
+summary(echo.glmpois)
+plot(echo.glmpois)
+#AIC 1646.7
+
+#Gaussian GLM with Log+1 transformation of echolocation bouts best model fit - AIC 338.87
+```
+
+```{r}
+#Followed up with a likelihood ratio test to compare the effects of each factor - TOTAL VOCALS
+
+elog.glm <- glm(log1p(echo) ~ dolphin + site + season + perch + drum, data = dolphinz)
+elog.glm2 <- glm(log1p(echo) ~ site + season + perch + drum, data = dolphinz)
+elog.glm3 <- glm(log1p(echo) ~ dolphin + season + perch + drum, data = dolphinz)
+elog.glm4 <- glm(log1p(echo) ~ dolphin + site  + perch + drum, data = dolphinz)
+elog.glm5 <- glm(log1p(echo) ~ dolphin + site + season + drum, data = dolphinz)
+elog.glm6 <- glm(log1p(echo) ~ dolphin + site + season + perch, data = dolphinz)
+
+lrtest(elog.glm, elog.glm2) #dolphin
+lrtest(elog.glm, elog.glm3) #site
+lrtest(elog.glm, elog.glm4) #season
+lrtest(elog.glm, elog.glm5) #perch
+lrtest(elog.glm, elog.glm6) #drum
+```
+
+
+
+```{r}
+#Pearson Correlations to further assess relationships with continuous variables
+#Calf variable (p < 0.001 ) correlations with total dolphins sighted and total vocalizations detected
+# echo bouts ~ dolphins sighted
+ggscatter(dolphinz, x = "dolphin", y = "echo",
+          add = "reg.line",                         
+          conf.int = TRUE ,      
+ xlab = "Total Dolphins Sighted", ylab = "Log+1(Total Echo Bouts Detected)")+
+  stat_cor(aes(x=dolphin, y=log1p(echo)), label.x = 20)
+
+```
+
+```{r}
+par(mfrow=c(1,2))
+
+plot(predict(elog.glm), log1p(dolphinz$echo), xlab='Predicted Total Echo Bouts', ylab='Observed Total Echo Bouts', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(elog.glm, type='response'), residuals(elog.glm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+```
+```{r}
+Anova(elog.glm)
+#remove drum, trout, noiseratio
+```
+
+
+```{r}
+library(ggplot2)  # load the package
+
+par(mfrow=c(2,2))
+(prelim_plot <- ggplot(dolphinz, aes(x = dolphin, y = log1p(echo))) +
+  geom_point() + theme_classic() +
+  geom_smooth(method = "lm") + labs(x="Total Dolphins Sighted", y = "Log+1(Total Vocalizations Detected)") + geom_text(x = 25, y = 4.8, label = eq(dolphinz$dolphin,log1p(dolphinz$echo)), parse = TRUE))
+
+
+```
+OLs term plot - for glm residuals of my response given other factors residuals of that ~ factor of interest
+
+
+BP - GLM Model
+```{r}
+bplog.glm <- glm(log1p(bp) ~ dolphin + site + season + site*season + drum + trout, data = dolphinz)
+summary(bplog.glm)
+#without log+1(total) AIC = 790.99
+#with Site*Season interaction AIC = 238.14
+#without toadfish, silver perch, or noiseratio factors AIC = 236.13
+plot(bplog.glm)
+
+bpalog.glm <- aov(bplog.glm)
+summary(bpalog.glm)
+
+stepAIC(bplog.glm)
+#remove perch, toad, and noise ratio
+```
+
+```{r}
+#Testing Negative Binomial and Poisson GLM distributions
+bp.glmnb <- glm.nb(bp ~ dolphin + site + season + perch + trout + noiseratio, data = dolphinz)
+summary(bp.glmnb)
+AIC(bp.glmnb)
+#AIC 239.38
+
+bp.glmpois <- glm(bp ~ dolphin + site + season + perch, family = poisson, data = dolphinz)
+summary(bp.glmpois)
+plot(bp.glmpois)
+#AIC 537.26
+
+#Gaussian GLM with Log+1 transformation of total vocalizations best model fit - AIC 238.38
+```
+
+
+```{r}
+#Followed up with a likelihood ratio test to compare the effects of each factor - TOTAL VOCALS
+
+bplog.glm <- glm(log1p(bp) ~ dolphin + site + season + drum + site*season + trout, data = dolphinz)
+bplog.glm2 <- glm(log1p(bp) ~ site + season + drum + site*season + trout, data = dolphinz)
+bplog.glm3 <- glm(log1p(bp) ~ dolphin + season + drum + site*season + trout, data = dolphinz)
+bplog.glm4 <- glm(log1p(bp) ~ dolphin + site + drum  + site*season +  trout, data = dolphinz)
+bplog.glm5 <- glm(log1p(bp) ~ dolphin + site + season  + site*season + trout, data = dolphinz)
+bplog.glm6 <- glm(log1p(bp) ~ dolphin + site + season + drum + trout, data = dolphinz)
+bplog.glm7 <- glm(log1p(bp) ~ dolphin + site + season + drum + site*season, data = dolphinz)
+
+lrtest(bplog.glm, bplog.glm2) #dolphin
+lrtest(bplog.glm, bplog.glm3) #site
+lrtest(bplog.glm, bplog.glm4) #season
+lrtest(bplog.glm, bplog.glm5) #drum
+lrtest(bplog.glm, bplog.glm6) #site*season
+lrtest(bplog.glm, bplog.glm7) #trout
+```
+
+```{r}
+
+par(mfrow=c(1,2))
+
+plot(predict(elog.glm), log1p(dolphinz$echo), xlab='Predicted Echo Bouts', ylab='Observed Echo Bouts', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(elog.glm, type='response'), residuals(elog.glm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+
+
+par(mfrow=c(1,2))
+
+plot(predict(echo.glmnb), dolphinz$echo, xlab='Predicted Echo Bouts', ylab='Observed Echo Bouts', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(echo.glmnb, type='response'), residuals(echo.glmnb, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+
+
+
+par(mfrow=c(1,2))
+
+plot(predict(bplog.glm), log1p(dolphinz$bp), xlab='Predicted Burst Pulses', ylab='Observed Burst Pulses', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(bplog.glm, type='response'), residuals(bplog.glm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+
+
+par(mfrow=c(1,2))
+
+plot(exp(predict(bp.glmnb))-1, dolphinz$bp, xlab='Predicted Burst Pulses', ylab='Observed Burst Pulses', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(bp.glmnb, type='response'), residuals(bp.glmnb, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+
+#Further confirmation to use guassian glm with log+1 transformation of burst pulses  instead of negative binomial glm to account for high number of zeros.
+```
+
+```{r}
+(prelim_plot <- ggplot(dolphinz, aes(x = dolphin, y = log1p(bp))) +
+  geom_point() + theme_classic() + labs(x="Total Dolphins Sighted", y = "Log+1(Total Burst Pulses Detected)") + geom_smooth(method = "lm", colour = "dark green") + geom_text(x = 25, y = 4, label = eq(dolphinz$dolphin,log1p(dolphinz$bp)), parse = TRUE))
+
+```
+
+```{r}
+#Pearson Correlations to further assess relationships with continuous variables
+
+# total bps ~ dolphins sighted
+ggscatter(dolphinz, x = "dolphin", y = "bp",
+          add = "reg.line",                         
+          conf.int = TRUE ,      
+ xlab = "Total Dolphins Sighted", ylab = "Log+1(Total Burst Pulses Detected)")+
+  stat_cor(aes(x=dolphin, y=log1p(bp)), label.x = 20)
+
+```
+
+WHISTLE - GLM Regression
+```{r}
+whlog.glm <- glm(log1p(whist) ~ dolphin + site + season + site*season, data = dolphinz)
+summary(whlog.glm)
+#without log+1(total) AIC = 761.84
+#with Site*Season interaction AIC = 249.88
+#without toadfish, silver perch, red drum, seatrout, or noiseratio factors AIC = 249.88
+plot(whlog.glm)
+
+whalog.glm <- aov(whlog.glm)
+summary(whalog.glm)
+
+
+stepAIC(whlog.glm)
+#drop perch, toad, drum, noise ratio, and trout
+```
+
+
+```{r}
+#Testing Negative Binomial and Poisson GLM distributions
+wh.glmnb <- glm.nb(whist ~ dolphin + site + season + perch + trout + noiseratio, data = dolphinz)
+summary(wh.glmnb)
+stepAIC(wh.glmnb)
+#AIC 323.68
+
+wh.glmpois <- glm(whist ~ dolphin + site + season + perch, family = poisson, data = dolphinz)
+summary(wh.glmpois)
+plot(wh.glmpois)
+#AIC 570.68
+
+#Gaussian GLM with Log+1 transformation of whistles best model fit - AIC 266.62
+```
+
+```{r}
+#Followed up with a likelihood ratio test to compare the effects of each factor - WHISTLES
+
+whlog.glm <- glm(log1p(whist) ~ dolphin + site + season + site*season, data = dolphinz)
+whlog.glm2 <- glm(log1p(whist) ~ site + season + site*season, data = dolphinz)
+whlog.glm3 <- glm(log1p(whist) ~ dolphin + season + site*season, data = dolphinz)
+whlog.glm4 <- glm(log1p(whist) ~ dolphin + site + site*season, data = dolphinz)
+whlog.glm5 <- glm(log1p(whist) ~ dolphin + site + season, data = dolphinz)
+
+lrtest(whlog.glm, whlog.glm2) #dolphin
+lrtest(whlog.glm, whlog.glm3) #site
+lrtest(whlog.glm, whlog.glm4) #season
+lrtest(whlog.glm, whlog.glm5) #site*season
+```
+
+
+```{r}
+library(DTK)
+TK.whistle <- TK.test(dolphinz$whist, dolphinz$site, a=0.05)
+TK.whistle
+
+TK.whszn <- TK.test(dolphinz$whist, dolphinz$season, a=0.05)
+TK.whszn
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+
+plot(predict(whlog.glm), log1p(dolphinz$whist), xlab='Predicted Total Whistles', ylab='Observed Total Whistles', main = 'Model Predictability')
+abline(a=0, b=1)
+
+plot(predict(whlog.glm, type='response'), residuals(whlog.glm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
+```
+
+```{r}
+
+(prelim_plot <- ggplot(dolphinz, aes(x = dolphin, y = log1p(whist))) +
+  geom_point() + theme_classic() + labs(x="Total Dolphins Sighted", y = "Log+1(Total Whistles Detected)") + geom_smooth(method = "lm", colour = "goldenrod2") + geom_text(x = 25, y = 4.2, label =  eq(dolphinz$dolphin,log1p(dolphinz$whist)), parse = TRUE))
+
+```
