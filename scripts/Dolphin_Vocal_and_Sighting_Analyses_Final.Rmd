@@ -4,6 +4,7 @@ output: html_document
 ---
 
 ```{r}
+#packages required
 library(scales)
 library(MASS)
 library(ggplot2)
@@ -14,6 +15,8 @@ library(RColorBrewer)
 library(DTK)
 library(lmtest)
 library(visreg)
+library(multcomp)
+library(multcompView)
 ```
 
 ```{r}
@@ -26,6 +29,7 @@ dolphinz$site <- factor(dolphinz$site)
 dolphinz$season <- factor(dolphinz$season)
 dolphinz$season <- factor(dolphinz$season, levels = c("Winter", "Spring", "Summer", "Fall"))
 dolphinz$site <- factor(dolphinz$site, levels = c("Citadel","Ashley River","Ft Sumter","SC Aquarium", "Drum Island","Wando River"))
+#Citadel site considered 'control' because this is in the upper Ashley River where we see the least vocalizations and dolphins
 
 #subset data to look at histograms of vocalization and sightiing frequency across survey areas
 stna <-  subset(dolphinz, site=="Wando River")
@@ -44,7 +48,7 @@ hist(dolphinz$dolphin,  xlab = "Total Number of Dolphins", main = "Sighting Freq
 ```
 
 ```{r}
-#histograms for vocalizations and dolphins sighted at stations A, B, and C
+#histograms for vocalization detection and dolphin sighting frequency sighted at stations A, B, and C
 par(mfrow=c(2,3))
 hist(stna$total,  xlab = "Total Number of Vocalizations", main = "Wando River") 
 hist(stnb$total,  xlab = "Total Number of Vocalizations", main = "Drum Island") 
@@ -54,7 +58,7 @@ hist(stnb$dolphin,  xlab = "Total Number of Dolphins", main = "Drum Island")
 hist(stnc$dolphin,  xlab = "Total Number of Dolphins", main = "SC Aquarium") 
 ```
 ```{r}
-#histograms for vocalizations and dolphins sighted at stations D, E, and F
+#histograms for vocalization detection and dolphin sighting frequency sighted at stations D, E, and F
 par(mfrow=c(2,3))
 hist(stnd$total,  xlab = "Total Number of Vocalizations", main = "Ft Sumter") 
 hist(stne$total,  xlab = "Total Number of Vocalizations", main = "Ashley River") 
@@ -65,14 +69,19 @@ hist(stnf$dolphin,  xlab = "Total Number of Dolphins", main = "Citadel")
 ```
 
 Model Testing -
-
 ```{r}
 #First basic regression not including other environmental, temporal, and spatial factors 
 #R squared value is very low, likely due to not including the other factors important to relationship 
 
-#Multiple regression including all factors I want to assess -- it looks really good, but I'm worried I'm overfitting the data with all these factors, move forward with glm and then tukey kramer hsd mult comparisons for significant categorical factors. 
+#Multiple regression including all factors I want to assess -- it looks really good, but I'm worried I'm overfitting the data with all these factors, moved forward with testing glm across multiple distribution models and then for post hoc tests used likelihood ratio chi-square for assessing significance of all factors and then tukey kramer hsd multiple comparison of means for significant categorical factors. 
 
-#Tested multiple models (Poisson, Negative Binomial, Gaussian with no transforms, and Gaussian with transformations) and compared using AIC criteria, landing on a model with log+1 transformations of total vocalizations, echos, burst pulses, and whistles.
+#Tested multiple GLM models (Poisson, Negative Binomial, Gaussian with no transforms, and Gaussian with transformations) and compared using AIC criteria, landing on a GLM with log+1 transformations of total vocalizations, echos, burst pulses, and whistles.
+
+#First tested the possible effect of calf presence by separating total dolphin count into adult and calf
+#Found no significant effect and the model shows significantly lower AIC and in testing model with AIC 
+#the model was better if calf was dropped (AIC lesser by 2 points) 
+
+#In the end the Gaussian GLM with log+1 transformation looked best, used pseudo R-squared values
 
 basictot_lm <- lm(log1p(total) ~ dolphin, data = dolphinz)
 summary(basictot_lm)
@@ -92,15 +101,37 @@ plot(predict(multtot_lm), log1p(dolphinz$total), xlab='Predicted Total Vocalizat
 abline(a=0, b=1)
 
 plot(predict(multtot_lm, type='response'), residuals(multtot_lm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
-
-shapiro.test(dolphinz$total)
-shapiro.test(dolphinz$dolphin)
-#both not normally distributed -- moving forward with glm due to use of count data and large number of factors I am assessing. Also to compare to other distribtuion models such as Poisson and Negative Binomial distributions due to high # of zeros 
-
-#First tested the possible effect of calf presence by separating total dolphin count into adult and calf
-#Found no significant effect and the model shows significantly lower AIC and in testing model with AIC 
-#the model was better if calf was dropped (AIC lower than 2 points) 
 ```
+
+```{r}
+#Followed up with a likelihood ratio test to compare the effects of each factor - TOTAL VOCALS
+
+
+multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz)
+multtot_lm1 <- lm(log1p(total) ~ site + season + drum + perch + trout, data = dolphinz)
+multtot_lm2 <- lm(log1p(total) ~ dolphin + season + drum + perch + trout, data = dolphinz)
+multtot_lm3 <- lm(log1p(total) ~ dolphin + site + drum + perch + trout, data = dolphinz)
+multtot_lm4 <- lm(log1p(total) ~ dolphin + site + season + perch + trout, data = dolphinz)
+multtot_lm5 <- lm(log1p(total) ~ dolphin + site + season + drum + trout, data = dolphinz)
+multtot_lm6 <- lm(log1p(total) ~ dolphin + site + season + drum + perch, data = dolphinz)
+
+lrtest(multtot_lm,multtot_lm1) #dolphin
+lrtest(multtot_lm,multtot_lm2) #site
+lrtest(multtot_lm,multtot_lm3) #season
+lrtest(multtot_lm,multtot_lm4) #drum
+lrtest(multtot_lm,multtot_lm5) #perch
+lrtest(multtot_lm,multtot_lm6) #trout
+```
+
+```{r}
+library(vegan)
+total_pca <- rda(dolphinz$total ~ dolphinz$dolphin + dolphinz$site + dolphinz$season + dolphinz$drum + dolphinz$perch, scale = TRUE)
+
+plot(total_pca)
+ordiplot(total_pca)
+```
+
+
 
 ```{r}
 #TOTAL VOCALIZATIONS - GLM with Log + 1 transformation of total summed dolphin vocalizations
@@ -113,10 +144,15 @@ summary(logtotal.glm)
 #with Site*Season interaction AIC = 348.62
 plot(logtotal.glm)
 
-
 stepAIC(logtotal.glm)
 #remove noise ratio, toad, trout
 ```
+
+```{r}
+#pseudo R-squared
+with(summary(logtotal.glm), 1 - deviance/null.deviance)
+```
+
 ```{r}
 #Can see degrees of freedom, sum of squares, and p-values for each variable against total vocals
 alog.glm <- aov(logtotal.glm)
@@ -155,9 +191,6 @@ lrtest(logtotal.glm, logtotal.glm6) #drum
 ```
 
 ```{r}
-library(multcomp)
-library(multcompView)
-
 #Tukey Kramer HSD post hoc tests to determine which seasons and sites are most significant
 #multcomp is to assign letters of significance for displaying on figures in a compact letter display (more in chunk below)
 
@@ -329,28 +362,6 @@ names(whwand) = c("Site", "Whistles", "lab")
 
 whsite_text1 = rbind(whsite_text,whcitdl,whashr,whftsum,whaqua,whdrum,whwand)
 
-```
-
-
-```{r}
-#Pearson Correlations to further assess relationships with continuous variables - Dolphins sighted
-
-# total vocals ~ dolphin count
-ggscatter(dolphinz, x = "dolphin", y = "total",
-          add = "reg.line",                         
-          conf.int = TRUE ,      
- xlab = "Total Dolphins Sighted", ylab = "Log+1(Total Vocalizations Detected)") +
-  stat_cor(aes(x=dolphin, y=total), label.x = 20)
-
-#Testing Assumptions of Pearson's Correlation
-
-ggqqplot(dolphinz$dolphin, ylab = "Total Dolphins Sighted")
-# wt
-ggqqplot(log1p(dolphinz$total), ylab = "Log+1(Total Vocalizations Detected)")
-restot.1 <- cor.test(dolphinz$dolphin, log1p(dolphinz$total), 
-                    method = "pearson")
-restot.1
-#looks good
 ```
 
 
