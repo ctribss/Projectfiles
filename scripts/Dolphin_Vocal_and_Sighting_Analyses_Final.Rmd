@@ -395,7 +395,6 @@ whsite_text1 = rbind(whsite_text,whcitdl,whashr,whftsum,whaqua,whdrum,whwand)
 ```
 
 
-QUESTION - partial correlation coeff run correlation on residuals rather than factor of interest ( do I need this? )
 ```{r}
 #Plots to further assess the fit of my model, on the left predicted values based on the model compared to observed and on the right the residuals plotted against the fitted values to make sure there is no pattern
 par(mfrow=c(1,2))

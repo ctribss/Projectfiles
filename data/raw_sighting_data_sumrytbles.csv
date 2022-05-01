@@ -1,9 +1,17 @@
-﻿,Acoustic Detections,,,,,,,,Vocalization Abundance,,,,,,Visual Detections,,,,,Sighting Abundance,,,
-,Total files,Echolocation (%),Burst      pulses (%),Whistles      (%),Total survey time (min),,,Total vocalizations,Echolocation (%),Burst      pulses (%),Whistles    (%),Detection    Rate,,,Total sightings,Total   surveys,Total survey time (min),,,Total dolphins,Total     adults,Total      calves,Sighting    Rate
-,,,,,,,,,,,,,,,,,,,,,,,
-Wando River,76,28 (0.37),10 (0.13),15 (0.20),1700,,Wando River,272,189 (0.69),25 (0.09),58 (0.21),0.16,,Wando River,76,34,1700,,Wando River,277,215,62,0.16
-Drum Island,71,26 (0.37),4 (0.06),17 (0.24),1700,,Drum Island,346,196 (0.57),21 (0.06),129 (0.37),0.2,,Drum Island,71,33,1700,,Drum Island,209,161,48,0.12
-SC Aquarium,74,39 (0.53),20 (0.27),16 (0.22),1700,,SC Aquarium,905,605 (0.67),163 (0.18),137 (0.15),0.53,,SC Aquarium,74,34,1700,,SC Aquarium,268,209,59,0.16
-Ft Sumter,61,11 (0.18),2 (0.03),8 (0.13),1700,,Ft Sumter,82,63 (0.77),6 (0.07),13 (0.16),0.05,,Ft Sumter,61,34,1700,,Ft Sumter,236,204,32,0.14
-Ashley River,63,14 (0.22),0 (0),2 (0.03),1700,,Ashley River,102,95 (0.93),0,7 (0.07),0.06,,Ashley River,63,34,1700,,Ashley River,158,127,31,0.09
-Citadel,39,11 (0.28),2 (0.05),2 (0.05),1700,,Citadel,73,50 (0.68),6 (0.08),17 (0.23),0.04,,Citadel,39,34,1700,,Citadel,71,63,8,0.04
+﻿,Acoustic Detections,,,,,,,,Vocalization Abundance,,,,,,Visual Detections,,,,,Sighting Abundance,,,,
+,Total files,Echolocation (%),Burst      pulses (%),Whistles      (%),Total survey time (min),,,Total vocalizations,Echolocation (%),Burst      pulses (%),Whistles    (%),Detection    Rate,,,Total sightings,Total   surveys,Total survey time (min),,,Total dolphins,Total     adults,Total      calves,Sighting    Rate,
+,,,,,,,,,,,,,,,,,,,,,,,,
+Wando River,76,28 (0.37),10 (0.13),15 (0.20),1700,,Wando River,272,189 (0.69),25 (0.09),58 (0.21),0.16,,Wando River,76,34,1700,,Wando River,277,215,62,0.16,
+Drum Island,71,26 (0.37),4 (0.06),17 (0.24),1700,,Drum Island,346,196 (0.57),21 (0.06),129 (0.37),0.2,,Drum Island,71,33,1700,,Drum Island,209,161,48,0.12,
+SC Aquarium,74,39 (0.53),20 (0.27),16 (0.22),1700,,SC Aquarium,905,605 (0.67),163 (0.18),137 (0.15),0.53,,SC Aquarium,74,34,1700,,SC Aquarium,268,209,59,0.16,
+Ft Sumter,61,11 (0.18),2 (0.03),8 (0.13),1700,,Ft Sumter,82,63 (0.77),6 (0.07),13 (0.16),0.05,,Ft Sumter,61,34,1700,,Ft Sumter,236,204,32,0.14,
+Ashley River,63,14 (0.22),0 (0),2 (0.03),1700,,Ashley River,102,95 (0.93),0,7 (0.07),0.06,,Ashley River,63,34,1700,,Ashley River,158,127,31,0.09,
+Citadel,39,11 (0.28),2 (0.05),2 (0.05),1700,,Citadel,73,50 (0.68),6 (0.08),17 (0.23),0.04,,Citadel,39,34,1700,,Citadel,71,63,8,0.04,
+,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,
+Seasonal,Total files,Echolocation (%),Burst      pulses (%),Whistles      (%),Survey Effort,,Seasonal,Total vocalizations,Echolocation (%),Burst      pulses (%),Whistles    (%),Detection    Rate,,Seasonal,Total sightings,Total   surveys,Total survey time (min),,,Seasonal,Total dolphins,Total     adults,Total      calves,Sighting    Rate
+Winter,121,43 (0.36),18 (0.15),40 (0.33),242,,Winter,828,382 (0.46),148 (0.18),298 (0.36),0.31,,Winter,121,9,2700,,,Winter,468,374,94,0.17
+Spring,113,15 (0.13),4 (0.04),11 (0.10),226,,Spring,180,125 (0.69),15 (0.08),40 (0.22),0.05,,Spring,113,11,3300,,,Spring,330,264,66,0.10
+Summer,53,18 (0.34),5 (0.09),2 (0.04),106,,Summer,190,170 (0.89),13 (0.07),7 (0.04),0.11,,Summer,53,6,1800,,,Summer,143,120,23,0.08
+Fall,98,52 (0.53),11 (0.11),7 (0.07),196,,Fall,582,521 (0.90),45 (0.08),16 (0.03),0.24,,Fall,98,8,2400,,,Fall,278,221,57,0.12

@@ -13,6 +13,7 @@ Main project broken into 4 folders: data, scripts, figs, and presentations
 
 data folder (): Contains raw data file (raw_sighting_data) and files to be used in analysis (bimonthly)
   - raw_sighting_data.csv : contains all sighting/vocalization data before any summarizing 
+  - raw_sighting_data_sumrytbles : tables summaarizing vocalization and sighting patterns across site and season
   - bimonthly.csv : contains all sighting/vocalization data summed bimonthly at each station
   - dsite.csv : contains all sighting/vocalization data summed monthly at each station and was used in  
   'Dolphin_Vocal_and_Sighting_Analyses_Monthly.Rmd' same analyses at monthly time scale. Used to compare 
