@@ -12,15 +12,23 @@ Project working directory:
 Main project broken into 4 folders: data, scripts, figs, and presentations
 
 data folder (): Contains raw data file (raw_sighting_data) and files to be used in analysis (bimonthly)
-  - raw_sighting_data.csv contains all sighting/vocalization data before any summarizing 
-  - bimonthly.csv contains all sighting/vocalization data summed bimonthly at each station
+  - raw_sighting_data.csv : contains all sighting/vocalization data before any summarizing 
+  - bimonthly.csv : contains all sighting/vocalization data summed bimonthly at each station
+  - dsite.csv : contains all sighting/vocalization data summed monthly at each station and was used in  
+  'Dolphin_Vocal_and_Sighting_Analyses_Monthly.Rmd' same analyses at monthly time scale. Used to compare 
+  to bimonthly if still see significance and we do, however was not included in graphs and figures in 
+  final presentation and paper.
  
 scripts folder ():
-  - Dolphin_Vocal_and_Sighting_Analyses_Rough.Rmd contains preliminary analyses 
-  - Dolphin_Vocal_and_Sighting_Analyses_Final.Rmd contains R code for final analyses, cleaned up and            annotated for reproducibility
+  - Dolphin_Vocal_and_Sighting_Analyses_Rough.Rmd : contains preliminary analyses (not used for final
+  presentation or paper) 
+  - Dolphin_Vocal_and_Sighting_Analyses_Final.Rmd : contains R code for final analyses at bimonthly scale, 
+  cleaned up and annotated for reproducibility
+  - Dolphin_Vocal_and_Sighting_Analyses_Monthly.Rmd : contains R code for same analyses at monthly scale,
+  cleaned up and annotated for reproducibility (not used for final presentation or paper) 
   
 figures folder (): 
-Final figures to be used in report.
+Final figures to be used in report as well as supplemental figures.  
 
 presentations folder (): 
 Final presentations to be used for project pitch and for final presentation.

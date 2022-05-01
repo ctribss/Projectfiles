@@ -17,6 +17,8 @@ library(lmtest)
 library(visreg)
 library(multcomp)
 library(multcompView)
+library(car)
+library(dplyr)
 ```
 
 ```{r}
@@ -104,31 +106,59 @@ plot(predict(multtot_lm, type='response'), residuals(multtot_lm, type='response'
 ```
 
 ```{r}
-#Followed up with a likelihood ratio test to compare the effects of each factor - TOTAL VOCALS
-
-
-multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz)
-multtot_lm1 <- lm(log1p(total) ~ site + season + drum + perch + trout, data = dolphinz)
-multtot_lm2 <- lm(log1p(total) ~ dolphin + season + drum + perch + trout, data = dolphinz)
-multtot_lm3 <- lm(log1p(total) ~ dolphin + site + drum + perch + trout, data = dolphinz)
-multtot_lm4 <- lm(log1p(total) ~ dolphin + site + season + perch + trout, data = dolphinz)
-multtot_lm5 <- lm(log1p(total) ~ dolphin + site + season + drum + trout, data = dolphinz)
-multtot_lm6 <- lm(log1p(total) ~ dolphin + site + season + drum + perch, data = dolphinz)
-
-lrtest(multtot_lm,multtot_lm1) #dolphin
-lrtest(multtot_lm,multtot_lm2) #site
-lrtest(multtot_lm,multtot_lm3) #season
-lrtest(multtot_lm,multtot_lm4) #drum
-lrtest(multtot_lm,multtot_lm5) #perch
-lrtest(multtot_lm,multtot_lm6) #trout
+Anova(multtot_lm)
 ```
 
 ```{r}
-library(vegan)
-total_pca <- rda(dolphinz$total ~ dolphinz$dolphin + dolphinz$site + dolphinz$season + dolphinz$drum + dolphinz$perch, scale = TRUE)
+#Beta coefficients for partial correlation plots
+tst <- lm((log1p(total)) ~ site + season, dolphinz)
+tot_parcor <- lm(scale(residuals(tst)) ~ scale(dolphin), data = dolphinz)
+tot_parcor
 
-plot(total_pca)
-ordiplot(total_pca)
+dolphinz_std <- dolphinz%>%mutate_if(is.numeric,scale)
+#scaling to standardize numeric variables
+
+multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz)
+multtot_lmstd <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz_std)
+
+round(summary(multtot_lm)$coef, 6)
+round(summary(multtot_lmstd)$coef, 6)
+#comparing Beta coeffs between model with and without scaling
+#t stat and p-value aren't supposed to change at all and they are, could be because of categorical variables?
+
+cor(log1p(dolphinz$total), dolphinz$dolphin)
+cor(log1p(dolphinz$total), dolphinz$drum)
+cor(log1p(dolphinz$total), dolphinz$perch)
+cor(log1p(dolphinz$total), dolphinz$trout)
+#individual correlation coefficients not very similar to the Beta estimates in the scaled model
+
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor=3, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) 
+        cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor)
+}
+
+
+pairs(dolphinz, lower.panel = panel.cor, upper.panel = panel.smooth)
+#pairs plot looks pretty crazy due to the addditional variables in the dataframe we aren't including
+
+newdf_totpairs <- dolphinz[c("total","dolphin","site", "season", "drum", "perch", "trout")]
+#new dataframe only including model variables
+
+newdf_totpairs$logtotal <- log1p(newdf_totpairs$total)
+
+pairs(newdf_totpairs, lower.panel = panel.cor, upper.panel = panel.smooth)
+#looks like site and season are colinear with red drum but I'm not sure how this would affect Beta coefficients
+#added log+1(total) variable in dataframe since I am using this transformation in my model and can now see strong
+#colinearity between log+1(total) and dolphin and log+1(total) and site, multicolinearity problem? 
+
+#decided to not moved forward with reporting standardize Beta coefficients for partial correlation coefficients 
 ```
 
 
@@ -554,6 +584,10 @@ whistlsite
 
 ECHO GLM regression
 ```{r}
+elog.lm <- lm(log1p(echo) ~ dolphin + site + season + perch + drum, data = dolphinz)
+summary(elog.lm)
+
+
 elog.glm <- glm(log1p(echo) ~ dolphin + site + season + perch + drum, data = dolphinz)
 summary(elog.glm)
 #without log+1(total) AIC = 930.88
@@ -563,6 +597,13 @@ plot(elog.glm)
 
 stepAIC(elog.glm)
 #drop trout, toad, noiseratio
+```
+```{r}
+#pseudo R-squared
+with(summary(elog.glm), 1 - deviance/null.deviance)
+```
+```{r}
+Anova(elog.lm)
 ```
 
 ```{r}
@@ -640,6 +681,11 @@ OLs term plot - for glm residuals of my response given other factors residuals o
 
 BP - GLM Model
 ```{r}
+bplog.lm <- lm(log1p(bp) ~ dolphin + site + season + site*season + drum + trout, data = dolphinz)
+summary(bplog.lm)
+
+
+
 bplog.glm <- glm(log1p(bp) ~ dolphin + site + season + site*season + drum + trout, data = dolphinz)
 summary(bplog.glm)
 #without log+1(total) AIC = 790.99
@@ -652,6 +698,13 @@ summary(bpalog.glm)
 
 stepAIC(bplog.glm)
 #remove perch, toad, and noise ratio
+```
+```{r}
+#pseudo R-squared
+with(summary(bplog.glm), 1 - deviance/null.deviance)
+```
+```{r}
+Anova(bplog.lm)
 ```
 
 ```{r}
@@ -746,6 +799,10 @@ ggscatter(dolphinz, x = "dolphin", y = "bp",
 
 WHISTLE - GLM Regression
 ```{r}
+whlog.lm <- lm(log1p(whist) ~ dolphin + site + season + site*season, data = dolphinz)
+summary(whlog.lm)
+
+
 whlog.glm <- glm(log1p(whist) ~ dolphin + site + season + site*season, data = dolphinz)
 summary(whlog.glm)
 #without log+1(total) AIC = 761.84
@@ -759,6 +816,27 @@ summary(whalog.glm)
 
 stepAIC(whlog.glm)
 #drop perch, toad, drum, noise ratio, and trout
+```
+
+```{r}
+#pseudo R-squared
+with(summary(whlog.glm), 1 - deviance/null.deviance)
+```
+
+```{r}
+Anova(whlog.lm)
+```
+
+```{r}
+#Beta coefficients for partial correlation plots
+tst <- lm((log1p(total)) ~ site + season, dolphinz)
+tot_parcor <- lm(scale(residuals(tst)) ~ scale(dolphin), data = dolphinz)
+tot_parcor
+
+dolphinz_std <- dolphinz%>%mutate_if(is.numeric,scale)
+round(summary(mod_std)$coef, 3)
+
+
 ```
 
 

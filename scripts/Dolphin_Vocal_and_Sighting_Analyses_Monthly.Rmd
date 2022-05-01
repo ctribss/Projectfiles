@@ -1,5 +1,5 @@
 ---
-title: "Dolphin_Vocal_Sighting_Analyses_Final_Bimonthly"
+title: "Dolphin_Vocal_Sighting_Analyses_Final_Monthly_bysite"
 output: html_document
 ---
 
@@ -17,12 +17,13 @@ library(lmtest)
 library(visreg)
 library(multcomp)
 library(multcompView)
+library(car)
 ```
 
 ```{r}
 #set to working directory
 setwd("/Users/caroline/Projectfiles")
-dolphinz <- read.csv("./data/bimonthly.csv")
+dolphinz <- read.csv("~/Projectfiles/data/dsite.csv")
 
 #specify categorical factors
 dolphinz$site <- factor(dolphinz$site)
@@ -43,7 +44,7 @@ stnf <-  subset(dolphinz, site=="Citadel")
 ```{r}
 #overall histograms showing vocalization and sighting frequency respectively
 par(mfrow=c(1,2))
-hist(dolphinz$total,  xlab = "Total Number of Vocalizations", breaks = 8, main = "Vocalization Frequency")
+hist(dolphinz$total,  xlab = "Total Number of Vocalizations", breaks = 10, main = "Vocalization Frequency")
 hist(dolphinz$dolphin,  xlab = "Total Number of Dolphins", main = "Sighting Frequency") 
 ```
 
@@ -88,17 +89,19 @@ summary(basictot_lm)
 plot(basictot_lm)
 #R squared = 0.2
 
-multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch + trout, data = dolphinz)
+multtot_lm <- lm(log1p(total) ~ dolphin + site + season + drum + perch, data = dolphinz)
 summary(multtot_lm)
 plot(multtot_lm)
-#R squared  = 0.535, Adjusted = 0.4651
+#R squared  = 0.5345, Adjusted = 0.4637
+#with log+1 on dolphin count -- R squared = 0.5223, Adjusted = 0.4613 - not used
 stepAIC(multtot_lm)
-#remove noiseratio and toadfish
-#new R squared  = 0.535, Adjusted = 0.4761
+#remove noiseratio, toadfish, and seatrout
+#new R squared  = 0.5333, Adjusted = 0.4793
 
 par(mfrow=c(1,2))
 plot(predict(multtot_lm), log1p(dolphinz$total), xlab='Predicted Total Vocalizations', ylab='Observed Total Vocalizations', main = 'Model Predictability')
 abline(a=0, b=1)
+
 
 plot(predict(multtot_lm, type='response'), residuals(multtot_lm, type='response'), xlab='Fitted values', ylab='Residuals', main='Residuals vs Fitted Values')
 ```
@@ -122,15 +125,6 @@ lrtest(multtot_lm,multtot_lm4) #drum
 lrtest(multtot_lm,multtot_lm5) #perch
 lrtest(multtot_lm,multtot_lm6) #trout
 ```
-
-```{r}
-library(vegan)
-total_pca <- rda(dolphinz$total ~ dolphinz$dolphin + dolphinz$site + dolphinz$season + dolphinz$drum + dolphinz$perch, scale = TRUE)
-
-plot(total_pca)
-ordiplot(total_pca)
-```
-
 
 
 ```{r}
@@ -554,6 +548,9 @@ whistlsite
 
 ECHO GLM regression
 ```{r}
+elog.lm <- lm(log1p(echo) ~ dolphin + site + season + perch + drum, data = dolphinz)
+summary(elog.lm)
+
 elog.glm <- glm(log1p(echo) ~ dolphin + site + season + perch + drum, data = dolphinz)
 summary(elog.glm)
 #without log+1(total) AIC = 930.88
@@ -563,6 +560,8 @@ plot(elog.glm)
 
 stepAIC(elog.glm)
 #drop trout, toad, noiseratio
+
+anova(elog.lm)
 ```
 
 ```{r}
